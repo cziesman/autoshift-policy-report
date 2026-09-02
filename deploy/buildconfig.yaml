@@ -1,0 +1,27 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: autoshift-policy-report
+spec: {}
+
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: autoshift-policy-report
+spec:
+  source:
+    type: Binary
+
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+
+  output:
+    to:
+      kind: ImageStreamTag
+      name: autoshift-policy-report:latest
+
+  triggers:
+    - type: ImageChange

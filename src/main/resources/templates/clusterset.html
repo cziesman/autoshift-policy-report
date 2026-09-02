@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+    <head th:replace="~{layout :: head('ClusterSet')}"></head>
+    <body>
+        <div th:replace="~{layout :: nav}"></div>
+        <main class="app-content">
+            <header class="page-header">
+                <h1 th:text="${report.clusterSet.name}">managed</h1>
+                <div class="meta">
+                    <rh-tag variant="desaturated" th:text="${report.clusterSet.type}">managedClusterSets</rh-tag>
+                    <span>Repository: <strong th:text="${report.repositoryLocation}">site-values</strong></span>
+                    <span>Source: <strong th:text="${report.clusterSet.sourceName}">managed.yaml</strong></span>
+                </div>
+            </header>
+            <div class="grid grid-4">
+                <rh-card>
+                    <div class="stat-card">
+                        <div class="metric-icon clusters small">▣</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Clusters</div>
+                            <div class="stat-value" th:text="${#lists.size(report.clusters)}">0</div>
+                            <div class="stat-note">Member clusters</div>
+                        </div>
+                    </div>
+                </rh-card>
+                <rh-card>
+                    <div class="stat-card">
+                        <div class="metric-icon implemented small">✓</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Enabled policies</div>
+                            <div class="stat-value" th:text="${#lists.size(report.policies.?[state.name() == 'ENABLED'])}">
+                                0
+                            </div>
+                        </div>
+                    </div>
+                </rh-card>
+                <rh-card>
+                    <div class="stat-card">
+                        <div class="metric-icon policies small">×</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Disabled policies</div>
+                            <div class="stat-value" th:text="${#lists.size(report.policies.?[state.name() == 'DISABLED'])}">
+                                0
+                            </div>
+                        </div>
+                    </div>
+                </rh-card>
+                <rh-card>
+                    <div class="stat-card">
+                        <div class="metric-icon implemented small">−</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Excluded policies</div>
+                            <div class="stat-value" th:text="${#lists.size(report.policies.?[state.name() == 'EXCLUDED'])}">
+                                0
+                            </div>
+                        </div>
+                    </div>
+                </rh-card>
+            </div>
+            <div class="section-gap"></div>
+            <div class="status-legend-row">
+                <div class="legend">
+                    <span class="legend-item"><span class="legend-icon enabled">✓</span> Implemented</span>
+                    <span class="legend-item"><span class="legend-icon excluded">−</span> Excluded</span>
+                    <span class="legend-item"><span class="legend-icon disabled">×</span> Not Implemented</span>
+                    <span class="legend-item"><span class="legend-icon na">−</span> Not Applicable</span>
+                </div>
+            </div>
+            <div class="section-gap"></div>
+            <div class="grid grid-2 detail-grid">
+                <div class="stack">
+                    <rh-card>
+                        <h2 slot="header" class="card-title">Labels</h2>
+                        <table class="data-table">
+                            <thead>
+                            <tr>
+                                <th>Label</th>
+                                <th>Value</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="entry : ${report.clusterSet.labels}">
+                                <td th:text="${entry.key}"></td>
+                                <td th:text="${entry.value}"></td>
+                            </tr>
+                            <tr th:if="${#maps.isEmpty(report.clusterSet.labels)}">
+                                <td colspan="2" class="empty">No labels</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </rh-card>
+                    <rh-card>
+                        <h2 slot="header" class="card-title">Configuration</h2>
+                        <table class="data-table">
+                            <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Value</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="entry : ${report.config}">
+                                <td th:text="${entry.key}"></td>
+                                <td th:text="${entry.value}"></td>
+                            </tr>
+                            <tr th:if="${#maps.isEmpty(report.config)}">
+                                <td colspan="2" class="empty">No configuration values</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </rh-card>
+                </div>
+                <div class="stack">
+                    <rh-card>
+                        <h2 slot="header" class="card-title">Policies configured by this ClusterSet</h2>
+                        <div class="table-wrap">
+                            <table class="data-table">
+                                <thead>
+                                <tr>
+                                    <th>Policy</th>
+                                    <th>Tier</th>
+                                    <th>Status</th>
+                                    <th>Source</th>
+                                    <th>Label value</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="p : ${report.policies}">
+                                    <td>
+                                        <a th:href="@{/policies/{name}(name=${p.policy.name})}" th:text="${p.policy.name}"></a>
+                                    </td>
+                                    <td>
+                                        <span class="tier-pill" th:classappend="${'tier-' + p.policy.tier.name().toLowerCase()}" th:text="${p.policy.tier}">stable</span>
+                                    </td>
+                                    <td><span class="status-icon" th:classappend="${p.state.name().toLowerCase().replace('_','-')}" th:attr="title=${p.state}" aria-label="Policy status">
+      <span th:if="${p.state.name() == 'ENABLED'}">✓</span>
+      <span th:if="${p.state.name() == 'EXCLUDED'}">−</span>
+      <span th:if="${p.state.name() == 'DISABLED'}">×</span>
+      <span th:if="${p.state.name() == 'NOT_APPLICABLE'}">−</span>
+      <span th:if="${p.state.name() != 'ENABLED' and p.state.name() != 'EXCLUDED' and p.state.name() != 'DISABLED' and p.state.name() != 'NOT_APPLICABLE'}">?</span>
+    </span></td>
+                                    <td th:text="${p.source}"></td>
+                                    <td th:text="${p.labelValue ?: ''}"></td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </rh-card>
+                    <rh-card>
+                        <h2 slot="header" class="card-title">Member Clusters</h2>
+                        <div class="table-wrap">
+                            <table class="data-table">
+                                <thead>
+                                <tr>
+                                    <th>Cluster</th>
+                                    <th>Overrides</th>
+                                    <th>Source</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="c : ${report.clusters}">
+                                    <td>
+                                        <a th:href="@{/clusters/{source}/{name}(source=${c.sourceName},name=${c.name})}" th:text="${c.name}"></a>
+                                    </td>
+                                    <td th:text="${#maps.size(c.labels)}"></td>
+                                    <td class="muted" th:text="${c.sourceName}"></td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(report.clusters)}">
+                                    <td colspan="3" class="empty">No clusters reference this ClusterSet.</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </rh-card>
+                </div>
+            </div>
+        </main>
+    </body>
+</html>

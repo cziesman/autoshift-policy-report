@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="${title} + ' - AutoShift Policy Report'">AutoShift Policy Report</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@rhds/tokens@3.1.0/css/global.min.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "@rhds/elements/": "https://cdn.jsdelivr.net/npm/@rhds/elements@4.2.2/elements/",
+      "@rhds/icons": "https://cdn.jsdelivr.net/npm/@rhds/icons@2.2.0/icons.js",
+      "@rhds/icons/": "https://cdn.jsdelivr.net/npm/@rhds/icons@2.2.0/",
+      "lit": "https://cdn.jsdelivr.net/npm/lit@3.3.3/index.js",
+      "lit/": "https://cdn.jsdelivr.net/npm/lit@3.3.3/",
+      "lit-element/lit-element.js": "https://cdn.jsdelivr.net/npm/lit-element@4.2.2/lit-element.js",
+      "lit-html": "https://cdn.jsdelivr.net/npm/lit-html@3.3.3/index.js",
+      "lit-html/": "https://cdn.jsdelivr.net/npm/lit-html@3.3.3/",
+      "tslib": "https://cdn.jsdelivr.net/npm/tslib@2.8.1/tslib.es6.mjs"
+    }
+  }
+  </script>
+  <script type="module">
+    import '@rhds/elements/rh-card/rh-card.js';
+    import '@rhds/elements/rh-tag/rh-tag.js';
+    import '@rhds/elements/rh-button/rh-button.js';
+    import '@rhds/elements/rh-alert/rh-alert.js';
+  </script>
+  <link rel="stylesheet" href="/css/application.css">
+</head>
+<body>
+<header th:fragment="nav" class="app-navbar">
+  <a class="brand" href="/" aria-label="AutoShift Policy Report">
+    <img src="/images/redhat-hat.svg" alt="Red Hat" class="brand-logo">
+    <span class="brand-title">AutoShift Policy Report</span>
+  </a>
+  <nav class="nav-button-group" aria-label="Main navigation">
+    <a href="/" th:classappend="${currentPage == 'summary'} ? ' active' : ''">Summary</a>
+    <a href="/clusters" th:classappend="${currentPage == 'clusters'} ? ' active' : ''">Clusters</a>
+    <a href="/clustersets" th:classappend="${currentPage == 'clustersets'} ? ' active' : ''">ClusterSets</a>
+    <a href="/policies" th:classappend="${currentPage == 'policies'} ? ' active' : ''">Policies</a>
+  </nav>
+</header>
+</body>
+</html>

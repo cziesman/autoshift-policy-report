@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Clusters')}"></head><body>
+<div th:replace="~{layout :: nav}"></div>
+<main class="app-content">
+  <header class="page-header"><h1>Clusters</h1><p>Clusters discovered from the site values repository.</p></header>
+  <rh-card>
+    <h2 slot="header" class="card-title">All Clusters</h2>
+    <div class="table-wrap"><table class="data-table">
+      <thead><tr><th>Cluster</th><th>ClusterSet</th><th>Labels</th><th>Source</th></tr></thead>
+      <tbody><tr th:each="c : ${report.clusters}">
+        <td><a th:href="@{/clusters/{source}/{name}(source=${c.sourceName},name=${c.name})}" th:text="${c.name}">cluster</a></td>
+        <td th:text="${c.clusterSet ?: 'unassigned'}">managed</td>
+        <td th:text="${#maps.size(c.labels)}">0</td>
+        <td class="muted" th:text="${c.sourceName}">source.yaml</td>
+      </tr>
+      <tr th:if="${#lists.isEmpty(report.clusters)}"><td colspan="4" class="empty">No clusters found.</td></tr>
+      </tbody>
+    </table></div>
+  </rh-card>
+</main></body></html>

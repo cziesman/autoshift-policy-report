@@ -1,0 +1,5 @@
+managedClusterSets:
+  sbx:
+    labels:
+      tempo: 'true'
+      openshift-gitops: 'false'

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Summary')}"></head>
+<body>
+<div th:replace="~{layout :: nav}"></div>
+<main class="app-content">
+  <header class="page-header">
+    <h1>Overview</h1>
+    <p>Effective AutoShift policy selection across your clusters.</p>
+  </header>
+
+  <div class="grid grid-4 overview-stats">
+    <rh-card><div class="stat-card"><div class="metric-icon clusters" aria-hidden="true">
+        <svg viewBox="0 0 48 48" role="img"><rect x="9" y="8" width="30" height="12" rx="2"/><rect x="9" y="27" width="30" height="12" rx="2"/><path d="M14 14h10M14 33h10M34 14h1M34 33h1"/></svg>
+      </div><div class="stat-content"><div class="stat-label">Clusters</div><div class="stat-value" th:text="${report.clusters.size()}">12</div><div class="stat-note">Total clusters</div></div></div></rh-card>
+    <rh-card><div class="stat-card"><div class="metric-icon clustersets" aria-hidden="true">
+        <svg viewBox="0 0 48 48" role="img"><circle cx="24" cy="15" r="6"/><circle cx="12" cy="23" r="5"/><circle cx="36" cy="23" r="5"/><path d="M15 37c0-6 4-10 9-10s9 4 9 10M4 37c0-5 3-8 8-8 2 0 4 1 5 2M44 37c0-5-3-8-8-8-2 0-4 1-5 2"/></svg>
+      </div><div class="stat-content"><div class="stat-label">ClusterSets</div><div class="stat-value" th:text="${report.clusterSets.size()}">5</div><div class="stat-note">Total ClusterSets</div></div></div></rh-card>
+    <rh-card><div class="stat-card"><div class="metric-icon policies" aria-hidden="true">
+        <svg viewBox="0 0 48 48" role="img"><path d="M24 5 38 10v11c0 10-5.5 17-14 22-8.5-5-14-12-14-22V10z"/><path d="M24 11v25"/></svg>
+      </div><div class="stat-content"><div class="stat-label">Policies</div><div class="stat-value" th:text="${report.policies.size()}">48</div><div class="stat-note">Total policies</div></div></div></rh-card>
+    <rh-card><div class="stat-card"><div class="metric-icon implemented" aria-hidden="true">
+        <svg viewBox="0 0 48 48" role="img"><circle cx="24" cy="24" r="16"/><path d="m16 24 5 5 11-11"/></svg>
+      </div><div class="stat-content"><div class="stat-label">Implemented Cells</div><div class="stat-value" th:text="${report.enabledCells()}">312</div><div class="stat-note">Policy implementations</div></div></div></rh-card>
+  </div>
+
+  <div class="grid grid-2 repo-grid">
+    <div th:replace="~{repository-info :: repositoryCard('Policy Repository', ${policiesRepository})}"></div>
+    <div th:replace="~{repository-info :: repositoryCard('Site Values Repository', ${siteValuesRepository})}"></div>
+  </div>
+
+  <rh-card class="matrix-card">
+    <div class="matrix-header" slot="header">
+      <h2>Policy Implementation Matrix</h2>
+      <div class="legend" aria-label="Policy status legend">
+        <span class="legend-item"><span class="legend-icon enabled">✓</span>Implemented</span>
+        <span class="legend-item"><span class="legend-icon excluded">−</span>Excluded</span>
+        <span class="legend-item"><span class="legend-icon disabled">×</span>Not Implemented</span>
+        <span class="legend-item"><span class="legend-icon na">−</span>Not Applicable</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table matrix">
+        <thead>
+          <tr>
+            <th rowspan="2" class="policy-name">Policy</th>
+            <th rowspan="2">Tier</th>
+            <th th:attr="colspan=${report.clusterSets.size()}" class="group-heading">ClusterSets</th>
+            <th th:attr="colspan=${report.clusters.size()}" class="group-heading">Clusters</th>
+          </tr>
+          <tr>
+            <th th:each="clusterSet : ${report.clusterSets}">
+              <a th:href="@{/clustersets/{type}/{source}/{name}(type=${clusterSet.type},source=${clusterSet.sourceName},name=${clusterSet.name})}"
+                 th:text="${clusterSet.name}">managed</a>
+            </th>
+            <th th:each="cluster : ${report.clusters}">
+              <a th:href="@{/clusters/{source}/{name}(source=${cluster.sourceName},name=${cluster.name})}" th:text="${cluster.name}">cluster</a>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr th:each="summary : ${report.policySummaries}">
+          <td class="policy-name"><a th:href="@{'/policies/' + ${summary.policy.name}}" th:text="${summary.policy.name}">policy</a></td>
+          <td>
+            <span class="tier-pill" th:classappend="${'tier-' + summary.policy.tier.toString().toLowerCase()}"
+                  th:text="${summary.policy.tier}">STABLE</span>
+          </td>
+          <td th:each="state : ${summary.clusterSets}" class="status"
+              th:classappend="${state.state.toString().toLowerCase().replace('_','-')}" th:title="${state.source}">
+            <span th:switch="${state.state}">
+              <span th:case="${T(com.redhat.autoshift.report.model.PolicyState).ENABLED}">✓</span>
+              <span th:case="${T(com.redhat.autoshift.report.model.PolicyState).DISABLED}">×</span>
+              <span th:case="${T(com.redhat.autoshift.report.model.PolicyState).EXCLUDED}">−</span>
+              <span th:case="*">−</span>
+            </span>
+          </td>
+          <td th:each="state : ${summary.clusters}" class="status"
+              th:classappend="${state.state.toString().toLowerCase().replace('_','-')}" th:title="${state.source}">
+            <span th:switch="${state.state}">
+              <span th:case="${T(com.redhat.autoshift.report.model.PolicyState).ENABLED}">✓</span>
+              <span th:case="${T(com.redhat.autoshift.report.model.PolicyState).DISABLED}">×</span>
+              <span th:case="${T(com.redhat.autoshift.report.model.PolicyState).EXCLUDED}">−</span>
+              <span th:case="*">−</span>
+            </span>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </rh-card>
+</main>
+</body>
+</html>

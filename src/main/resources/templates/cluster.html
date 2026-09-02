@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Cluster')}"></head><body>
+<div th:replace="~{layout :: nav}"></div>
+<main class="app-content">
+<header class="page-header"><h1 th:text="${report.cluster.name}">cluster</h1>
+  <div class="meta"><span>ClusterSet: <strong th:text="${report.cluster.clusterSet ?: 'unassigned'}">managed</strong></span>
+    <span>Source: <strong th:text="${report.cluster.sourceName}">cluster.yaml</strong></span></div>
+</header>
+<rh-alert th:if="${report.clusterSet == null}" state="warning">
+  <h3 slot="header">ClusterSet not found</h3><p>No matching ClusterSet definition was found for this cluster.</p>
+</rh-alert>
+<div class="section-gap" th:if="${report.clusterSet == null}"></div>
+<rh-card>
+<h2 slot="header" class="card-title">Labels</h2>
+<div th:if="${!#maps.isEmpty(report.cluster.labels)}" class="label-list">
+  <span class="label-chip" th:each="entry : ${report.cluster.labels}"><span th:text="${entry.key}">label</span><strong th:text="${entry.value}">true</strong></span>
+</div>
+<p th:if="${#maps.isEmpty(report.cluster.labels)}" class="empty">No labels.</p>
+</rh-card>
+<div class="section-gap"></div>
+<rh-card>
+  <h2 slot="header" class="card-title">Effective Policies</h2>
+  <div class="table-wrap"><table class="data-table"><thead><tr><th>Policy</th><th>Tier</th><th>Status</th><th>Source</th><th>Label value</th></tr></thead>
+  <tbody><tr th:each="p : ${report.policies}">
+    <td><a th:href="@{/policies/{name}(name=${p.policy.name})}" th:text="${p.policy.name}"></a></td>
+    <td><span class="tier-pill" th:classappend="${'tier-' + p.policy.tier.name().toLowerCase()}" th:text="${p.policy.tier}">stable</span></td>
+    <td><span class="status-icon" th:classappend="${p.state.name().toLowerCase().replace('_','-')}" th:attr="title=${p.state}" aria-label="Policy status">
+      <span th:if="${p.state.name() == 'ENABLED'}">✓</span>
+      <span th:if="${p.state.name() == 'EXCLUDED'}">−</span>
+      <span th:if="${p.state.name() == 'DISABLED'}">×</span>
+      <span th:if="${p.state.name() == 'NOT_APPLICABLE'}">−</span>
+      <span th:if="${p.state.name() != 'ENABLED' and p.state.name() != 'EXCLUDED' and p.state.name() != 'DISABLED' and p.state.name() != 'NOT_APPLICABLE'}">?</span>
+    </span></td>
+    <td th:text="${p.source}"></td><td th:text="${p.labelValue ?: ''}"></td>
+  </tr></tbody></table></div>
+</rh-card>
+</main></body></html>

@@ -1,0 +1,6 @@
+autoshift:
+  dryRun: false
+excludePolicies:
+  - excluded-policy
+autoshiftGitRepo: https://github.com/auto-shift/autoshiftv2.git
+autoshiftGitBranchTag: main

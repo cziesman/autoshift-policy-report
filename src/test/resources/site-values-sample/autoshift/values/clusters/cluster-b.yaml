@@ -1,0 +1,4 @@
+clusters:
+  cluster-b:
+    config:
+      clusterSet: sbx

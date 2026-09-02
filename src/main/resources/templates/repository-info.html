@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="repositoryCard(title, info)">
+  <rh-card>
+    <h2 slot="header" class="card-title repo-card-title"><span class="repository-icon">▤</span><span th:text="${title}">Repository</span></h2>
+    <table class="key-value">
+      <tr>
+        <th>Repository</th>
+        <td class="text-break">
+          <a th:if="${info.configuredLocation != null and (info.configuredLocation.startsWith('https://') or info.configuredLocation.startsWith('http://'))}"
+             th:href="${info.configuredLocation}"
+             th:text="${info.configuredLocation}"
+             target="_blank"
+             rel="noopener noreferrer">https://example.com/repository.git</a>
+          <span th:unless="${info.configuredLocation != null and (info.configuredLocation.startsWith('https://') or info.configuredLocation.startsWith('http://'))}"
+                th:text="${info.configuredLocation}">.</span>
+        </td>
+      </tr>
+      <tr th:if="${info.branch != null && !info.branch.isBlank()}"><th>Branch</th><td th:text="${info.branch}">main</td></tr>
+      <tr><th>Content</th><td><span class="content-pill" th:text="${info.contentPath}">policies</span></td></tr>
+    </table>
+  </rh-card>
+</div>
+</html>

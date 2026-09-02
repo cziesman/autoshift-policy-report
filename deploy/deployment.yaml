@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autoshift-policy-report
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: autoshift-policy-report
+  template:
+    metadata:
+      labels:
+        app: autoshift-policy-report
+    spec:
+      containers:
+        - name: autoshift-policy-report
+          image: image-registry.openshift-image-registry.svc:5000/autoshift/autoshift-policy-report:latest
+
+          env:
+            - name: AUTOSHIFT_REPORT_POLICIES_LOCATION
+              value: "https://github.com/cziesman/autoshiftv2"
+
+            - name: AUTOSHIFT_REPORT_SITE_VALUES_LOCATION
+              value: "https://github.com/cziesman/autoshift-inventories"
+
+          ports:
+            - name: http
+              containerPort: 8080
+
+            - name: management
+              containerPort: 8081
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: management
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: management
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: autoshift-policy-report
+spec:
+  selector:
+    app: autoshift-policy-report
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: autoshift-policy-report
+spec:
+  to:
+    kind: Service
+    name: autoshift-policy-report
+  port:
+    targetPort: 8080

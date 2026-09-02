@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: autoshift-policy-report
+  thymeleaf:
+    cache: false
+
+server:
+  port: 8080
+
+management:
+  server:
+    port: 8081
+
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+autoshift:
+  report:
+    # The policy repository contains policies/{stable,certified,community}.
+    policies:
+      # Can be a local filesystem path or a Git repository URL.
+      location: /path/to/autoshiftv2
+      branch: main
+
+    # The site values repository contains autoshift/values/.
+    site-values:
+      # Can be a local filesystem path or a Git repository URL.
+      location: /path/to/site-values
+      branch: main
+
+    # URL repositories are refreshed with fetch/pull when the cached report is rebuilt.
+    refresh-on-request: true
+
+    # Cache the parsed policy/cluster/ClusterSet report in memory.
+    # Set to 0 to disable caching.
+    cache-seconds: 1800

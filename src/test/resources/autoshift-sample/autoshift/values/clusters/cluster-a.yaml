@@ -1,0 +1,6 @@
+clusters:
+  cluster-a:
+    config:
+      clusterSet: managed
+    labels:
+      acs: 'true'

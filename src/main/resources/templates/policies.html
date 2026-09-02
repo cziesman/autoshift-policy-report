@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+    <head th:replace="~{layout :: head('Policies')}"></head>
+    <body>
+        <div th:replace="~{layout :: nav}"></div>
+        <main class="app-content">
+            <header class="page-header"><h1>Policies</h1>
+                <p>Policy catalog discovered directly from the AutoShift policy repository.</p></header>
+            <rh-card>
+                <h2 slot="header" class="card-title">Policy Catalog</h2>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                        <tr>
+                            <th>Policy</th>
+                            <th>Tier</th>
+                            <th>Placement rules</th>
+                            <th>Enabled</th>
+                            <th>Clusters</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="p : ${report.policySummaries}">
+                            <td><a th:href="@{'/policies/' + ${p.policy.name}}" th:text="${p.policy.name}"></a></td>
+                            <td>
+                                <span class="tier-pill" th:classappend="${'tier-' + p.policy.tier.name().toLowerCase()}" th:text="${p.policy.tier}">stable</span>
+                            </td>
+                            <td th:text="${p.policy.rules.size()}"></td>
+                            <td th:text="${p.enabled}"></td>
+                            <td th:text="${p.total}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </rh-card>
+        </main>
+    </body>
+</html>

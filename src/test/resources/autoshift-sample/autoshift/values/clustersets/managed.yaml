@@ -1,0 +1,6 @@
+managedClusterSets:
+  managed:
+    labels:
+      tempo: 'true'
+      openshift-gitops: 'true'
+      acs: 'false'

@@ -19,10 +19,14 @@ import com.redhat.autoshift.report.model.ClusterSet;
 import com.redhat.autoshift.report.model.PolicyDefinition;
 import com.redhat.autoshift.report.model.PolicyRule;
 import com.redhat.autoshift.report.model.PolicyTier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class AutoShiftRepository {
+
+    private static final Logger LOG = LoggerFactory.getLogger(AutoShiftRepository.class);
 
     private final RepositorySourceFactory sources;
 
@@ -193,6 +197,7 @@ public class AutoShiftRepository {
                 try {
                     scanForPlacementRules(yaml.read(file), rules);
                 } catch (Exception ignored) {
+                    LOG.error(ignored.getMessage(), ignored);
                 }
             }
         }

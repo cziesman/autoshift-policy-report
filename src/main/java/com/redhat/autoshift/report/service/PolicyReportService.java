@@ -18,11 +18,15 @@ import com.redhat.autoshift.report.model.RepositoryInfo;
 import com.redhat.autoshift.report.repository.AutoShiftRepository;
 import com.redhat.autoshift.report.repository.YamlSupport;
 import com.redhat.autoshift.report.resolver.PolicyResolver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class PolicyReportService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PolicyReportService.class);
 
     @Autowired
     private AutoShiftRepository repository;
@@ -62,14 +66,18 @@ public class PolicyReportService {
 
     public Report report() throws IOException {
 
+        LOG.debug("Checking report cache");
+
         CachedReport current = cachedReport;
         long now = System.currentTimeMillis();
         long cacheMillis = Math.max(0L, properties.getCacheSeconds()) * 1000L;
 
         if (current != null && cacheMillis > 0 && now - current.createdAt() < cacheMillis) {
+            LOG.debug("Returning cached report");
             return current.report();
         }
 
+        LOG.info("Report cache expired or empty; rebuilding report");
         synchronized (this) {
             current = cachedReport;
             now = System.currentTimeMillis();
@@ -79,6 +87,7 @@ public class PolicyReportService {
 
             // Repository access, including Git refreshes, happens only while rebuilding
             // the cached report rather than once for every page request.
+            long start = System.currentTimeMillis();
             List<Cluster> clusters = repository.clusters();
             List<ClusterSet> sets = repository.clusterSets();
             List<PolicyDefinition> policies = repository.policies();
@@ -86,6 +95,12 @@ public class PolicyReportService {
                     resolver.clusterReport(c, resolveClusterSet(c, sets), policies, clusters)).toList();
             Report report = new Report(clusters, sets, policies, clusterReports,
                     resolver.policySummaries(clusters, sets, policies));
+            LOG.info(
+                    "Report rebuilt in {} ms: {} policies, {} clustersets, {} clusters",
+                    System.currentTimeMillis() - start,
+                    report.policies().size(),
+                    report.clusterSets().size(),
+                    report.clusters().size());
             cachedReport = new CachedReport(report, System.currentTimeMillis());
             return report;
         }

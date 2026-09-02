@@ -12,6 +12,7 @@ metadata:
 spec:
   source:
     type: Binary
+    binary: {}
 
   strategy:
     type: Docker

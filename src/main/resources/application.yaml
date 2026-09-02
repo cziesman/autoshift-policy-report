@@ -41,3 +41,15 @@ autoshift:
     # Cache the parsed policy/cluster/ClusterSet report in memory.
     # Set to 0 to disable caching.
     cache-seconds: 1800
+
+logging:
+  level:
+    root: INFO
+
+    com.redhat.autoshift.report: DEBUG
+
+    org.springframework.web: DEBUG
+    org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping: TRACE
+
+    org.thymeleaf: DEBUG
+    org.springframework.web.servlet.view: DEBUG

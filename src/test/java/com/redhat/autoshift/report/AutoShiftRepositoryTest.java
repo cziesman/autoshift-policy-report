@@ -37,6 +37,12 @@ class AutoShiftRepositoryTest {
         assertThat(repository.clusterSets()).extracting("name").containsExactly("managed", "sbx");
         assertThat(repository.clusters()).extracting("name").containsExactly("cluster-a", "cluster-b");
         assertThat(repository.policies().get(0).excluded()).isTrue();
+        assertThat(repository.policies().stream()
+                .filter(p -> p.name().equals("tempo"))
+                .findFirst()
+                .orElseThrow()
+                .yaml())
+                .contains("kind: Placement", "policy-generator-config.yaml", "kind: PolicyGenerator");
     }
 
     @Test

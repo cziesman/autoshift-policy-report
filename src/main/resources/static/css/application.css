@@ -326,3 +326,27 @@ rh-card { display:block; }
   .legend { justify-content:flex-start; }
   .label-chip { grid-template-columns:1fr; gap:4px; }
 }
+
+
+/* Read-only policy YAML viewer */
+.yaml-viewer {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+}
+.yaml-viewer .CodeMirror {
+  height: 600px;
+  min-height: 260px;
+  font-family: var(--rh-font-family-code, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  font-size: .9rem;
+  line-height: 1.5;
+}
+.yaml-viewer .CodeMirror-scroll {
+  height: 600px;
+  min-height: 260px;
+  overflow: auto;
+}
+.yaml-viewer .CodeMirror-gutters {
+  border-right: 1px solid var(--border-light);
+}

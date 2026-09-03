@@ -19,4 +19,30 @@
 <td><span class="status-text" th:classappend="${c.state.name().toLowerCase().replace('_','-')}" th:text="${c.state}"></span></td><td th:text="${c.source}"></td>
 </tr></tbody></table></div>
 </rh-card>
-</main></body></html>
+<div class="section-gap"></div>
+<rh-card>
+<h2 slot="header" class="card-title">Policy YAML</h2>
+<div class="yaml-viewer">
+  <textarea id="policy-yaml" th:text="${summary.policy.yaml}" readonly aria-label="Policy YAML"></textarea>
+</div>
+</rh-card>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/mode/yaml/yaml.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var textarea = document.getElementById('policy-yaml');
+    if (!textarea || typeof CodeMirror === 'undefined') return;
+    var editor = CodeMirror.fromTextArea(textarea, {
+      mode: 'yaml',
+      lineNumbers: true,
+      readOnly: true,
+      lineWrapping: false,
+      tabSize: 2,
+      indentUnit: 2,
+      viewportMargin: 100
+    });
+    editor.setSize(null, '600px');
+  });
+</script>
+</body></html>

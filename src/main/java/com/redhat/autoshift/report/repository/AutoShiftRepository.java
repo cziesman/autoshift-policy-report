@@ -162,7 +162,8 @@ public class AutoShiftRepository {
             try (var stream = Files.list(tierDir)) {
                 for (Path dir : stream.filter(Files::isDirectory).sorted().toList()) {
                     result.add(new PolicyDefinition(dir.getFileName().toString(), tier, dir,
-                            discoverRules(dir), excluded.contains(dir.getFileName().toString())));
+                            discoverRules(dir), excluded.contains(dir.getFileName().toString()),
+                            readPolicyYaml(dir)));
                 }
             }
         }
@@ -187,6 +188,22 @@ public class AutoShiftRepository {
         Map<String, String> result = new TreeMap<>();
         YamlSupport.map(object.get("labels")).forEach((k, v) -> result.put(k, YamlSupport.string(v)));
         return result;
+    }
+
+    private String readPolicyYaml(Path policyDir) throws IOException {
+
+        List<String> documents = new ArrayList<>();
+        try (var walk = Files.walk(policyDir)) {
+            for (Path file : walk.filter(Files::isRegularFile)
+                    .filter(this::isYaml)
+                    .sorted()
+                    .toList()) {
+                String content = Files.readString(file);
+                String relative = policyDir.relativize(file).toString().replace('\\', '/');
+                documents.add("# " + relative + "\n" + content.stripTrailing());
+            }
+        }
+        return String.join("\n\n---\n\n", documents);
     }
 
     private List<PolicyRule> discoverRules(Path policyDir) throws IOException {

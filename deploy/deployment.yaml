@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: autoshift-policy-report
-          image: image-registry.openshift-image-registry.svc:5000/autoshift/autoshift-policy-report:latest
+          image: image-registry.openshift-image-registry.svc:5000/autoshift-policy-report/autoshift-policy-report:latest
 
           env:
             - name: AUTOSHIFT_REPORT_POLICIES_LOCATION
@@ -26,10 +26,10 @@ spec:
           ports:
             - name: http
               containerPort: 8080
-
+              protocol: TCP
             - name: management
               containerPort: 8081
-
+              protocol: TCP
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness
@@ -59,6 +59,8 @@ spec:
   ports:
     - port: 8080
       targetPort: 8080
+      name: http
+      protocol: TCP
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
@@ -68,5 +70,10 @@ spec:
   to:
     kind: Service
     name: autoshift-policy-report
+    weight: 100
   port:
-    targetPort: 8080
+    targetPort: http
+  tls:
+    termination: edge
+    insecureTerminationPolicy: Redirect
+  wildcardPolicy: None

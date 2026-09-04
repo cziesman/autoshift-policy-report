@@ -119,3 +119,18 @@ The default `application.yaml` locations are placeholders and should be changed 
 
 This is a source/configuration report, not a live ACM compliance report. It reports what the Git configuration indicates should be selected. It does not query an ACM hub for live `Policy`, `Placement`, or `ManagedCluster` status.
 # autoshift-policy-report
+
+
+## Private repositories
+
+HTTP(S) Git repositories can be authenticated with an access token. Configure the token through the `token` property, preferably using an environment variable or Kubernetes/OpenShift Secret. The token is never included in repository display information or logs.
+
+For OpenShift, the deployment expects an optional Secret named `autoshift-policy-report-repository-credentials` with keys `policies-token` and `site-values-token`. A template is provided at `deploy/repository-secret.example.yaml`. Create the real Secret separately, for example:
+
+```bash
+oc create secret generic autoshift-policy-report-repository-credentials \
+  --from-literal=policies-token='YOUR_TOKEN' \
+  --from-literal=site-values-token='YOUR_TOKEN'
+```
+
+The application uses a shared, thread-safe in-memory report cache. Multiple users can read the application concurrently without each request cloning or parsing the repositories. When a cached report exists, an expired cache is refreshed in the background so users continue to receive the last successful report during a refresh. The first load still waits for the initial report to be built.

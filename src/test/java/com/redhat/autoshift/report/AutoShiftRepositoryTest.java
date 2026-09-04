@@ -17,9 +17,18 @@ class AutoShiftRepositoryTest {
         AutoShiftProperties p = new AutoShiftProperties();
         p.getPolicies().setLocation(Paths.get("src/test/resources/policy-repo-sample").toAbsolutePath().toString());
         p.getPolicies().setBranch("main");
+        p.getPolicies().setToken("test-policy-token");
         p.getSiteValues().setLocation(Paths.get("src/test/resources/site-values-sample").toAbsolutePath().toString());
         p.getSiteValues().setBranch("main");
         return p;
+    }
+
+    @Test
+    void repositoryPropertiesSupportAuthenticationTokens() {
+        AutoShiftProperties properties = properties();
+
+        assertThat(properties.getPolicies().getToken()).isEqualTo("test-policy-token");
+        assertThat(properties.getSiteValues().getToken()).isNull();
     }
 
     @Test

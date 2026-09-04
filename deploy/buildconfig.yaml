@@ -9,15 +9,24 @@ apiVersion: build.openshift.io/v1
 kind: BuildConfig
 metadata:
   name: autoshift-policy-report
+
 spec:
   source:
-    type: Binary
-    binary: {}
+    type: Git
+    git:
+      uri: https://github.com/cziesman/autoshift-policy-report.git
+      ref: main
+#    sourceSecret:
+#      name: autoshift-policy-report
 
   strategy:
-    type: Docker
-    dockerStrategy:
-      dockerfilePath: Dockerfile
+    type: Source
+    sourceStrategy:
+      from:
+        kind: DockerImage
+        name: registry.redhat.io/ubi9/openjdk-17:1.24
+      pullSecret:
+        name: registry-redhat-io
 
   output:
     to:
@@ -25,4 +34,4 @@ spec:
       name: autoshift-policy-report:latest
 
   triggers:
-    - type: ImageChange
+    - type: ConfigChange

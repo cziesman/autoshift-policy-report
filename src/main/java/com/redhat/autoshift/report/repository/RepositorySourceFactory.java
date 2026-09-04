@@ -10,6 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.redhat.autoshift.report.config.AutoShiftProperties;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.transport.CredentialsProvider;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.stereotype.Component;
 
@@ -43,13 +45,19 @@ public class RepositorySourceFactory {
         }
         if (isUrl(location)) {
             return gitSources.computeIfAbsent(location + "@" + config.getBranch(),
-                    key -> new GitRepositorySource(location, config.getBranch(), properties.isRefreshOnRequest()));
+                    key -> new GitRepositorySource(location, config.getBranch(), config.getToken(), properties.isRefreshOnRequest()));
         }
         Path path = Paths.get(location).toAbsolutePath().normalize();
         if (!Files.isDirectory(path)) {
             throw new IOException("Repository path does not exist or is not a directory: " + path);
         }
         return new LocalRepositorySource(path);
+    }
+
+    private boolean isHttpUrl(String value) {
+
+        String lower = value.toLowerCase(Locale.ROOT);
+        return lower.startsWith("http://") || lower.startsWith("https://");
     }
 
     private boolean isUrl(String value) {
@@ -81,11 +89,13 @@ public class RepositorySourceFactory {
 
     }
 
-    private static final class GitRepositorySource implements RepositorySource {
+    private final class GitRepositorySource implements RepositorySource {
 
         private final String uri;
 
         private final String branch;
+
+        private final String token;
 
         private final boolean refresh;
 
@@ -93,10 +103,11 @@ public class RepositorySourceFactory {
 
         private Git git;
 
-        private GitRepositorySource(String uri, String branch, boolean refresh) {
+        private GitRepositorySource(String uri, String branch, String token, boolean refresh) {
 
             this.uri = uri;
             this.branch = branch;
+            this.token = token;
             this.refresh = refresh;
         }
 
@@ -107,16 +118,21 @@ public class RepositorySourceFactory {
                 if (git == null) {
                     Path work = Files.createTempDirectory("autoshift-policy-report-");
                     Path checkout = work.resolve("repo");
-                    git = Git.cloneRepository()
+                    var command = Git.cloneRepository()
                             .setURI(uri)
                             .setDirectory(checkout.toFile())
-                            .setBranch(branch)
-                            .call();
+                            .setBranch(branch);
+                    credentialsProvider().ifPresent(command::setCredentialsProvider);
+                    git = command.call();
                     root = checkout;
                 } else if (refresh) {
-                    git.fetch().setRemote("origin").call();
+                    var fetch = git.fetch().setRemote("origin");
+                    credentialsProvider().ifPresent(fetch::setCredentialsProvider);
+                    fetch.call();
                     checkoutBranch(git, branch);
-                    git.pull().call();
+                    var pull = git.pull();
+                    credentialsProvider().ifPresent(pull::setCredentialsProvider);
+                    pull.call();
                 }
                 return root;
             } catch (GitAPIException e) {
@@ -136,6 +152,15 @@ public class RepositorySourceFactory {
                         .setStartPoint("origin/" + branch)
                         .call();
             }
+        }
+
+        private java.util.Optional<CredentialsProvider> credentialsProvider() {
+
+            if (token == null || token.isBlank() || !isHttpUrl(uri)) {
+                return java.util.Optional.empty();
+            }
+            // GitHub accepts the token as the HTTP basic password; the username is ignored.
+            return java.util.Optional.of(new UsernamePasswordCredentialsProvider("git", token));
         }
 
         @Override

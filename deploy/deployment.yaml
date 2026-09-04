@@ -23,6 +23,21 @@ spec:
             - name: AUTOSHIFT_REPORT_SITE_VALUES_LOCATION
               value: "https://github.com/cziesman/autoshift-inventories"
 
+            # Optional repository authentication. The Secret is intentionally not included here.
+            - name: AUTOSHIFT_REPORT_POLICIES_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: autoshift-policy-report-repository-credentials
+                  key: policies-token
+                  optional: true
+
+            - name: AUTOSHIFT_REPORT_SITE_VALUES_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: autoshift-policy-report-repository-credentials
+                  key: site-values-token
+                  optional: true
+
           ports:
             - name: http
               containerPort: 8080

@@ -24,7 +24,6 @@ public class ClusterSetController {
         for (var cs : report.clusterSets()) {
             long count = report.clusters().stream()
                     .filter(c -> cs.name().equals(c.clusterSet()))
-                    .filter(c -> cs.sourceName().equals(c.sourceName()) || uniqueClusterSetSource(report.clusters(), cs))
                     .count();
             clusterCounts.put(cs.id(), count);
         }
@@ -32,11 +31,6 @@ public class ClusterSetController {
         model.addAttribute("currentPage", "clustersets");
         model.addAttribute("clusterCounts", clusterCounts);
         return "clustersets";
-    }
-
-    private boolean uniqueClusterSetSource(java.util.List<com.redhat.autoshift.report.model.Cluster> clusters, com.redhat.autoshift.report.model.ClusterSet cs) {
-
-        return clusters.stream().filter(c -> cs.name().equals(c.clusterSet())).count() == 1;
     }
 
     @GetMapping("/clustersets/{type}/{source}/{name}")

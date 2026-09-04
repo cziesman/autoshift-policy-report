@@ -20,8 +20,13 @@ import com.redhat.autoshift.report.repository.YamlSupport;
 import com.redhat.autoshift.report.resolver.PolicyResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class PolicyReportService {
@@ -41,6 +46,19 @@ public class PolicyReportService {
     private com.redhat.autoshift.report.repository.RepositorySourceFactory repositorySourceFactory;
 
     private volatile CachedReport cachedReport;
+
+    /**
+     * A single refresh worker prevents concurrent users from triggering duplicate
+     * repository refreshes while allowing requests to continue using the last
+     * successfully built report.
+     */
+    private final ExecutorService refreshExecutor = Executors.newSingleThreadExecutor(r -> {
+        Thread thread = new Thread(r, "autoshift-report-refresh");
+        thread.setDaemon(true);
+        return thread;
+    });
+
+    private final AtomicBoolean refreshInProgress = new AtomicBoolean();
 
     public RepositoryInfo policiesRepositoryInfo() throws IOException {
 
@@ -77,38 +95,83 @@ public class PolicyReportService {
             return current.report();
         }
 
-        LOG.info("Report cache expired or empty; rebuilding report");
+        if (cacheMillis <= 0) {
+            synchronized (this) {
+                LOG.info("Report caching disabled; rebuilding report");
+                return rebuildReport();
+            }
+        }
+
+        // Once a report exists, don't make every user's request wait for Git/network
+        // access. Start one background refresh and continue serving the last good report.
+        if (current != null) {
+            scheduleRefresh();
+            LOG.debug("Returning stale report while refresh is in progress");
+            return current.report();
+        }
+
+        // There is no report yet, so the first request must build it synchronously.
         synchronized (this) {
             current = cachedReport;
-            now = System.currentTimeMillis();
-            if (current != null && cacheMillis > 0 && now - current.createdAt() < cacheMillis) {
+            if (current != null) {
                 return current.report();
             }
-
-            // Repository access, including Git refreshes, happens only while rebuilding
-            // the cached report rather than once for every page request.
-            long start = System.currentTimeMillis();
-            List<Cluster> clusters = repository.clusters();
-            List<ClusterSet> sets = repository.clusterSets();
-            List<PolicyDefinition> policies = repository.policies();
-            List<ClusterReport> clusterReports = clusters.stream().map(c ->
-                    resolver.clusterReport(c, resolveClusterSet(c, sets), policies, clusters)).toList();
-            Report report = new Report(clusters, sets, policies, clusterReports,
-                    resolver.policySummaries(clusters, sets, policies));
-            LOG.info(
-                    "Report rebuilt in {} ms: {} policies, {} clustersets, {} clusters",
-                    System.currentTimeMillis() - start,
-                    report.policies().size(),
-                    report.clusterSets().size(),
-                    report.clusters().size());
-            cachedReport = new CachedReport(report, System.currentTimeMillis());
-            return report;
+            LOG.info("Report cache empty; building initial report");
+            return rebuildReport();
         }
+    }
+
+    private void scheduleRefresh() {
+
+        if (!refreshInProgress.compareAndSet(false, true)) {
+            return;
+        }
+
+        refreshExecutor.submit(() -> {
+            try {
+                synchronized (this) {
+                    LOG.info("Refreshing report cache in background");
+                    rebuildReport();
+                }
+            } catch (Exception e) {
+                // Keep the previous successful report available. A transient Git
+                // or parsing failure must not make the application unavailable.
+                LOG.error("Unable to refresh report cache; retaining previous report", e);
+            } finally {
+                refreshInProgress.set(false);
+            }
+        });
+    }
+
+    private Report rebuildReport() throws IOException {
+
+        long start = System.currentTimeMillis();
+        List<Cluster> clusters = repository.clusters();
+        List<ClusterSet> sets = repository.clusterSets();
+        List<PolicyDefinition> policies = repository.policies();
+        List<ClusterReport> clusterReports = clusters.stream().map(c ->
+                resolver.clusterReport(c, resolveClusterSet(c, sets), policies, clusters)).toList();
+        Report report = new Report(clusters, sets, policies, clusterReports,
+                resolver.policySummaries(clusters, sets, policies));
+        LOG.info(
+                "Report rebuilt in {} ms: {} policies, {} clustersets, {} clusters",
+                System.currentTimeMillis() - start,
+                report.policies().size(),
+                report.clusterSets().size(),
+                report.clusters().size());
+        cachedReport = new CachedReport(report, System.currentTimeMillis());
+        return report;
     }
 
     public void clearCache() {
 
         cachedReport = null;
+    }
+
+    @PreDestroy
+    public void shutdown() {
+
+        refreshExecutor.shutdownNow();
     }
 
     public ClusterReport cluster(String sourceName, String name) throws IOException {
@@ -142,11 +205,8 @@ public class PolicyReportService {
             return null;
         }
 
-        List<Cluster> candidates = report.clusters().stream()
+        List<Cluster> members = report.clusters().stream()
                 .filter(c -> name.equals(c.clusterSet()))
-                .toList();
-        List<Cluster> members = candidates.stream()
-                .filter(c -> sourceName.equals(c.sourceName()) || candidates.size() == 1)
                 .toList();
         List<PolicyEvaluation> evaluations = resolver.clusterSetPolicies(clusterSet, report.policies());
         Map<String, Object> config = YamlSupport.map(clusterSet.values().get("config"));

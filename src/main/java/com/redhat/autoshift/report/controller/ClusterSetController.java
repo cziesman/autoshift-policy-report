@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.redhat.autoshift.report.service.PolicyReportService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,9 +18,11 @@ public class ClusterSetController {
     private PolicyReportService service;
 
     @GetMapping("/clustersets")
-    public String clusterSets(Model model) throws Exception {
+    public String clusterSets(Model model, HttpSession session) throws Exception {
+        String policyBranch = DashboardController.selectedPolicyBranch(session);
+        String siteValuesBranch = DashboardController.selectedSiteValuesBranch(session);
+        var report = service.report(policyBranch, siteValuesBranch);
 
-        var report = service.report();
         Map<String, Long> clusterCounts = new LinkedHashMap<>();
         for (var cs : report.clusterSets()) {
             long count = report.clusters().stream()
@@ -27,22 +30,33 @@ public class ClusterSetController {
                     .count();
             clusterCounts.put(cs.id(), count);
         }
+
         model.addAttribute("report", report);
         model.addAttribute("currentPage", "clustersets");
         model.addAttribute("clusterCounts", clusterCounts);
+        model.addAttribute("selectedPolicyBranch", policyBranch);
+        model.addAttribute("selectedSiteValuesBranch", siteValuesBranch);
         return "clustersets";
     }
 
     @GetMapping("/clustersets/{type}/{source}/{name}")
-    public String clusterSet(@PathVariable String type, @PathVariable String source, @PathVariable String name, Model model) throws Exception {
+    public String clusterSet(
+            @PathVariable String type,
+            @PathVariable String source,
+            @PathVariable String name,
+            Model model,
+            HttpSession session) throws Exception {
 
-        var report = service.clusterSet(source, type, name);
+        String policyBranch = DashboardController.selectedPolicyBranch(session);
+        String siteValuesBranch = DashboardController.selectedSiteValuesBranch(session);
+        var report = service.clusterSet(source, type, name, policyBranch, siteValuesBranch);
         if (report == null) {
             return "redirect:/clustersets";
         }
         model.addAttribute("report", report);
         model.addAttribute("currentPage", "clustersets");
+        model.addAttribute("selectedPolicyBranch", policyBranch);
+        model.addAttribute("selectedSiteValuesBranch", siteValuesBranch);
         return "clusterset";
     }
-
 }

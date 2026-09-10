@@ -24,6 +24,38 @@ class AutoShiftRepositoryTest {
     }
 
     @Test
+    void readsHelmTemplatedAndMultiDocumentYaml() throws Exception {
+        Path file = Files.createTempFile("policy-", ".yaml");
+        Files.writeString(file, """
+                apiVersion: v1
+                kind: Namespace
+                metadata:
+                  name: {{ .Values.policy_namespace }}
+                ---
+                apiVersion: cluster.open-clusters-management.io/v1beta1
+                kind: Placement
+                metadata:
+                  name: placement
+                spec:
+                  predicates:
+                    - requiredClusterSelector:
+                        labelSelector:
+                          matchExpressions:
+                            - key: autoshift.io/environment
+                              operator: In
+                              values:
+                                - production
+                """);
+
+        YamlSupport yaml = new YamlSupport();
+        var documents = yaml.readDocuments(file);
+
+        assertThat(documents).hasSize(2);
+        assertThat(YamlSupport.map(documents.get(0)).get("kind")).isEqualTo("Namespace");
+        assertThat(YamlSupport.map(documents.get(1)).get("kind")).isEqualTo("Placement");
+    }
+
+    @Test
     void repositoryPropertiesSupportAuthenticationTokens() {
         AutoShiftProperties properties = properties();
 

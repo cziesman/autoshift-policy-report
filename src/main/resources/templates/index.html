@@ -3,6 +3,7 @@
 <head th:replace="~{layout :: head('Summary')}"></head>
 <body>
 <div th:replace="~{layout :: nav}"></div>
+<div th:replace="~{layout :: loading}"></div>
 <main class="app-content">
   <header class="page-header">
     <h1>Overview</h1>
@@ -25,8 +26,8 @@
   </div>
 
   <div class="grid grid-2 repo-grid">
-    <div th:replace="~{repository-info :: repositoryCard('Policy Repository', ${policiesRepository})}"></div>
-    <div th:replace="~{repository-info :: repositoryCard('Site Values Repository', ${siteValuesRepository})}"></div>
+    <div th:replace="~{repository-info :: repositoryCard('Policy Repository', ${policiesRepository}, ${availablePolicyBranches}, 'policyBranch')}"></div>
+    <div th:replace="~{repository-info :: repositoryCard('Site Values Repository', ${siteValuesRepository}, ${availableSiteValuesBranches}, 'siteValuesBranch')}"></div>
   </div>
 
   <rh-card class="matrix-card">

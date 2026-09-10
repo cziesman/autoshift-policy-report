@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;500;700&family=Red+Hat+Mono:wght@400;500&family=Red+Hat+Text:wght@400;500&display=swap");
 :root {
   color-scheme: light;
   --page-bg: #f7f7f7;
@@ -17,7 +18,7 @@ html, body { margin: 0; min-height: 100%; }
 body {
   background: var(--page-bg);
   color: var(--text);
-  font-family: var(--rh-font-family-body-text, "Red Hat Text", Helvetica, Arial, sans-serif);
+  font-family: "Red Hat Text", Helvetica, Arial, sans-serif;
   line-height: 1.45;
 }
 a { color: var(--blue); }
@@ -25,18 +26,18 @@ a:hover { color: #004b95; }
 
 /* Application shell */
 .app-navbar {
-  min-height: 92px;
-  padding: 16px 38px;
+  min-height: 72px;
+  padding: 12px 32px;
   display: flex;
   align-items: center;
-  gap: 34px;
+  gap: 28px;
   background: #151515;
   color: #fff;
 }
 .brand {
   display: flex;
   align-items: center;
-  gap: 17px;
+  gap: 13px;
   color: #fff;
   text-decoration: none;
   white-space: nowrap;
@@ -44,14 +45,14 @@ a:hover { color: #004b95; }
   min-width: 0;
 }
 .brand:hover { color: #fff; }
-.brand-logo { width: 70px; height: 58px; object-fit: contain; display: block; }
+.brand-logo { width: 52px; height: 44px; object-fit: contain; display: block; }
 .brand-title {
-  font-family: var(--rh-font-family-heading, "Red Hat Display", sans-serif);
-  font-size: 1.78rem;
+  font-family: "Red Hat Display", sans-serif;
+  font-size: 1.35rem;
   line-height: 1;
   font-weight: 700;
   letter-spacing: -.02em;
-  margin-right: 24px;
+  margin-right: 12px;
 }
 .nav-button-group {
   display: inline-flex;
@@ -65,17 +66,17 @@ a:hover { color: #004b95; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 155px;
-  height: 50px;
-  padding: 0 27px;
+  min-width: 120px;
+  height: 42px;
+  padding: 0 20px;
   color: #fff;
   background: #151515;
   border: 0;
   border-right: 1px solid rgba(255,255,255,.9);
   text-decoration: none;
-  font-family: var(--rh-font-family-heading, "Red Hat Display", sans-serif);
+  font-family: "Red Hat Display", sans-serif;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: .9rem;
   transition: background .12s ease, color .12s ease;
 }
 .nav-button-group a:last-child { border-right: 0; }
@@ -91,20 +92,71 @@ a:hover { color: #004b95; }
 .app-content {
   max-width: 1600px;
   margin: 0 auto;
-  padding: 32px 38px 56px;
+  padding: 28px 32px 48px;
 }
 .page-header { margin-bottom: 28px; }
 .page-header h1, .page-title {
   margin: 0;
-  font-family: var(--rh-font-family-heading, "Red Hat Display", sans-serif);
-  font-size: 2.15rem;
+  font-family: "Red Hat Display", sans-serif;
+  font-size: 1.75rem;
   line-height: 1.15;
   font-weight: 600;
   letter-spacing: -.02em;
 }
-.page-header p { margin: 8px 0 0; color: var(--muted); font-size: 1rem; }
+.page-header p { margin: 8px 0 0; color: var(--muted); font-size: .9rem; }
 .meta { display:flex; flex-wrap:wrap; align-items:center; gap:8px 22px; margin-top:10px; color:var(--muted); }
 .meta strong { color:var(--text); }
+
+/* Branch selector */
+.branch-selector-row { display:flex; justify-content:flex-end; margin: -8px 0 20px; }
+.branch-selector { display:flex; align-items:center; gap:10px; }
+.branch-selector label { font-size:.85rem; font-weight:500; color:var(--muted); }
+.branch-selector select {
+  min-width:180px;
+  height:36px;
+  padding:0 32px 0 10px;
+  border:1px solid var(--border);
+  border-radius:4px;
+  background:#fff;
+  color:var(--text);
+  font:500 .9rem/1.2 "Red Hat Text", sans-serif;
+}
+.branch-selector button { height:36px; padding:0 12px; border:1px solid var(--border); border-radius:4px; background:#fff; font:500 .85rem "Red Hat Text", sans-serif; }
+
+.repository-branch-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.repository-branch-selector select {
+  min-width: 180px;
+  height: 34px;
+  padding: 0 30px 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text);
+  font: 500 .88rem/1.2 "Red Hat Text", sans-serif;
+}
+.repository-branch-selector button {
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fff;
+  font: 500 .82rem "Red Hat Text", sans-serif;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 
 /* Layout */
 .grid { display:grid; gap:18px; }
@@ -115,34 +167,34 @@ a:hover { color: #004b95; }
 
 /* Summary/detail metric cards */
 .stat-card {
-  min-height: 148px;
-  padding: 24px 26px;
+  min-height: 120px;
+  padding: 18px 20px;
   display:flex;
   align-items:center;
-  gap:20px;
+  gap:16px;
   background:var(--surface);
   border:1px solid var(--border);
   border-radius:8px;
   box-shadow:0 1px 3px rgba(0,0,0,.04);
 }
 .stat-content { min-width: 0; }
-.stat-label { color:var(--text); font-size:1rem; margin-bottom:4px; }
+.stat-label { color:var(--text); font-size:.9rem; margin-bottom:4px; }
 .stat-value {
-  font-family:var(--rh-font-family-heading,"Red Hat Display",sans-serif);
-  font-size:2.55rem;
+  font-family:"Red Hat Display",sans-serif;
+  font-size:2rem;
   line-height:1.05;
   font-weight:600;
 }
-.stat-note { color:var(--muted); font-size:.92rem; margin-top:5px; }
+.stat-note { color:var(--muted); font-size:.82rem; margin-top:5px; }
 .metric-icon {
-  width:82px;
-  height:82px;
-  flex:0 0 82px;
+  width:64px;
+  height:64px;
+  flex:0 0 64px;
   border-radius:50%;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:2.3rem;
+  font-size:1.8rem;
   font-weight:600;
   border:1px solid rgba(0,0,0,.04);
 }
@@ -150,15 +202,15 @@ a:hover { color: #004b95; }
 .metric-icon.clustersets { background:#e9f6eb; color:#3e8635; }
 .metric-icon.policies { background:#f1e9f8; color:#5e35a0; }
 .metric-icon.implemented { background:#fff4dd; color:#e59800; }
-.metric-icon.small { width:48px; height:48px; flex-basis:48px; font-size:1.35rem; }
-.metric-icon svg { width:48px; height:48px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+.metric-icon.small { width:44px; height:44px; flex-basis:48px; font-size:1.1rem; }
+.metric-icon svg { width:44px; height:44px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
 .metric-icon.implemented svg { stroke-width:2.8; }
 
 rh-card { display:block; }
 .card-title {
   margin:0;
-  font-family:var(--rh-font-family-heading,"Red Hat Display",sans-serif);
-  font-size:1.35rem;
+  font-family:"Red Hat Display",sans-serif;
+  font-size:1.1rem;
   font-weight:600;
 }
 .card-subtitle { color:var(--muted); margin:5px 0 0; }
@@ -172,7 +224,7 @@ rh-card { display:block; }
   color:var(--text);
   font-size:.88rem;
   line-height:1.2;
-  font-family:var(--rh-font-family-code, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  font-family: "Red Hat Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 .repo-grid { margin-top:18px; }
 
@@ -185,7 +237,7 @@ rh-card { display:block; }
   background:#fff;
 }
 .data-table th, .data-table td {
-  padding:12px 14px;
+  padding:10px 12px;
   text-align:left;
   vertical-align:middle;
   border-right:1px solid var(--border-light);
@@ -252,7 +304,7 @@ rh-card { display:block; }
 .legend-icon.disabled { background:#c9190b; }
 .legend-icon.na { background:var(--gray); }
 .matrix-header { display:flex; align-items:center; justify-content:space-between; gap:18px; margin-bottom:16px; }
-.matrix-header h2 { margin:0; font-size:1.35rem; font-weight:600; }
+.matrix-header h2 { margin:0; font-size:1.1rem; font-weight:600; }
 
 
 /* Policy implementation status icons */
@@ -285,7 +337,7 @@ rh-card { display:block; }
   display:grid;
   grid-template-columns:minmax(180px, 1fr) minmax(140px, 1fr);
   gap:18px;
-  padding:12px 14px;
+  padding:10px 12px;
   border-bottom:1px solid var(--border-light);
 }
 .label-chip:last-child { border-bottom:0; }
@@ -302,11 +354,62 @@ rh-card { display:block; }
 .repo-card-title { display:flex; align-items:center; gap:12px; }
 .repository-icon { color:var(--blue); font-size:1.5rem; }
 
+/* Report reload indicator */
+.report-loading-overlay {
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(21,21,21,.42);
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition:opacity .12s ease, visibility .12s ease;
+}
+.report-loading-overlay.visible {
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
+.report-loading-dialog {
+  min-width:340px;
+  max-width:calc(100vw - 48px);
+  padding:24px 28px;
+  background:#fff;
+  border-radius:8px;
+  box-shadow:0 8px 32px rgba(0,0,0,.22);
+  text-align:center;
+}
+.report-loading-spinner {
+  width:42px;
+  height:42px;
+  margin:0 auto 16px;
+  border:4px solid #d2d2d2;
+  border-top-color:var(--red);
+  border-radius:50%;
+  animation:report-loading-spin .8s linear infinite;
+}
+.report-loading-title {
+  font-family:"Red Hat Display",sans-serif;
+  font-size:1.15rem;
+  font-weight:600;
+}
+.report-loading-message {
+  margin-top:6px;
+  color:var(--muted);
+  font-size:.88rem;
+}
+@keyframes report-loading-spin {
+  to { transform:rotate(360deg); }
+}
+
 @media (max-width:1200px) {
-  .app-navbar { padding:14px 24px; gap:20px; }
-  .brand-title { font-size:1.45rem; margin-right:8px; }
-  .brand-logo { width:62px; height:54px; }
-  .nav-button-group a { min-width:120px; padding:0 18px; }
+  .app-navbar { padding:14px 24px; gap:16px; }
+  .brand-title { font-size:1.2rem; margin-right:8px; }
+  .brand-logo { width:50px; height:42px; }
+  .nav-button-group a { min-width:105px; padding:0 14px; }
   .app-content { padding-inline:24px; }
 }
 @media (max-width:900px) {
@@ -317,11 +420,11 @@ rh-card { display:block; }
   .grid-2,.grid-4 { grid-template-columns:1fr; }
 }
 @media (max-width:600px) {
-  .app-navbar { padding:12px 14px; }
+  .app-navbar { padding:10px 12px; }
   .app-content { padding:24px 14px 40px; }
-  .brand-title { font-size:1.25rem; }
+  .brand-title { font-size:1.1rem; }
   .nav-button-group a { padding:0 7px; font-size:.88rem; }
-  .page-header h1 { font-size:1.8rem; }
+  .page-header h1 { font-size:1.55rem; }
   .matrix-header { align-items:flex-start; flex-direction:column; }
   .legend { justify-content:flex-start; }
   .label-chip { grid-template-columns:1fr; gap:4px; }
@@ -338,7 +441,7 @@ rh-card { display:block; }
 .yaml-viewer .CodeMirror {
   height: 600px;
   min-height: 260px;
-  font-family: var(--rh-font-family-code, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  font-family: "Red Hat Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: .9rem;
   line-height: 1.5;
 }

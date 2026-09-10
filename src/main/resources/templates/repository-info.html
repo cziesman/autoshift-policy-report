@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<div th:fragment="repositoryCard(title, info)">
+<div th:fragment="repositoryCard(title, info, branches, branchParam)">
   <rh-card>
     <h2 slot="header" class="card-title repo-card-title"><span class="repository-icon">▤</span><span th:text="${title}">Repository</span></h2>
     <table class="key-value">
@@ -16,7 +16,21 @@
                 th:text="${info.configuredLocation}">.</span>
         </td>
       </tr>
-      <tr th:if="${info.branch != null && !info.branch.isBlank()}"><th>Branch</th><td th:text="${info.branch}">main</td></tr>
+      <tr>
+        <th>Branch</th>
+        <td>
+          <form method="get" action="/" class="repository-branch-selector">
+            <label class="sr-only" th:for="${branchParam}" th:text="${title + ' branch'}">Repository branch</label>
+            <select th:id="${branchParam}" th:name="${branchParam}" onchange="showReportLoading(this.form)">
+              <option th:each="branch : ${branches}"
+                      th:value="${branch}"
+                      th:text="${branch}"
+                      th:selected="${branch == info.branch}">main</option>
+            </select>
+            <noscript><button type="submit">Apply</button></noscript>
+          </form>
+        </td>
+      </tr>
       <tr><th>Content</th><td><span class="content-pill" th:text="${info.contentPath}">policies</span></td></tr>
     </table>
   </rh-card>

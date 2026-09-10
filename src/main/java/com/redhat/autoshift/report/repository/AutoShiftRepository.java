@@ -39,13 +39,19 @@ public class AutoShiftRepository {
     }
 
     public Path policiesRoot() throws IOException {
+        return policiesRoot(null);
+    }
 
-        return resolvePoliciesRoot(sources.policies().root());
+    public Path policiesRoot(String branch) throws IOException {
+        return resolvePoliciesRoot(sources.policies(branch).root());
     }
 
     public Path siteValuesRoot() throws IOException {
+        return siteValuesRoot(null);
+    }
 
-        return resolveSiteValuesRoot(sources.siteValues().root());
+    public Path siteValuesRoot(String branch) throws IOException {
+        return resolveSiteValuesRoot(sources.siteValues(branch).root());
     }
 
     private Path resolvePoliciesRoot(Path root) throws IOException {
@@ -80,24 +86,36 @@ public class AutoShiftRepository {
     }
 
     public String policiesSource() throws IOException {
-
         return sources.policies().displayName();
     }
 
-    public String siteValuesSource() throws IOException {
+    public String policiesSource(String branch) throws IOException {
+        return sources.policies(branch).displayName();
+    }
 
+    public String siteValuesSource() throws IOException {
         return sources.siteValues().displayName();
     }
 
-    public Map<String, Object> global() throws IOException {
+    public String siteValuesSource(String branch) throws IOException {
+        return sources.siteValues(branch).displayName();
+    }
 
-        Path file = siteValuesRoot().resolve("global.yaml");
+    public Map<String, Object> global() throws IOException {
+        return global(null);
+    }
+
+    public Map<String, Object> global(String branch) throws IOException {
+        Path file = siteValuesRoot(branch).resolve("global.yaml");
         return Files.exists(file) ? yaml.read(file) : Map.of();
     }
 
     public List<ClusterSet> clusterSets() throws IOException {
+        return clusterSets(null);
+    }
 
-        Path dir = siteValuesRoot().resolve("clustersets");
+    public List<ClusterSet> clusterSets(String branch) throws IOException {
+        Path dir = siteValuesRoot(branch).resolve("clustersets");
         if (!Files.isDirectory(dir)) {
             return List.of();
         }
@@ -118,8 +136,11 @@ public class AutoShiftRepository {
     }
 
     public List<Cluster> clusters() throws IOException {
+        return clusters(null);
+    }
 
-        Path dir = siteValuesRoot().resolve("clusters");
+    public List<Cluster> clusters(String branch) throws IOException {
+        Path dir = siteValuesRoot(branch).resolve("clusters");
         if (!Files.isDirectory(dir)) {
             return List.of();
         }
@@ -144,14 +165,25 @@ public class AutoShiftRepository {
     }
 
     public List<PolicyDefinition> policies() throws IOException {
+        return policies(null, null);
+    }
 
-        Path base = policiesRoot();
+    public List<PolicyDefinition> policies(String policyBranch) throws IOException {
+        return policies(policyBranch, null);
+    }
+
+    /**
+     * Loads policies from the policy repository branch while reading the
+     * exclusion list from the independently selected site-values branch.
+     */
+    public List<PolicyDefinition> policies(String policyBranch, String siteValuesBranch) throws IOException {
+        Path base = policiesRoot(policyBranch);
         if (!Files.isDirectory(base)) {
             return List.of();
         }
         List<PolicyDefinition> result = new ArrayList<>();
         Set<String> excluded = new HashSet<>();
-        for (Object value : YamlSupport.list(global().get("excludePolicies"))) {
+        for (Object value : YamlSupport.list(global(siteValuesBranch).get("excludePolicies"))) {
             excluded.add(YamlSupport.string(value));
         }
         for (PolicyTier tier : PolicyTier.values()) {
@@ -212,9 +244,11 @@ public class AutoShiftRepository {
         try (var walk = Files.walk(policyDir)) {
             for (Path file : walk.filter(Files::isRegularFile).filter(this::isYaml).toList()) {
                 try {
-                    scanForPlacementRules(yaml.read(file), rules);
-                } catch (Exception ignored) {
-                    LOG.error(ignored.getMessage(), ignored);
+                    for (Object document : yaml.readDocuments(file)) {
+                        scanForPlacementRules(document, rules);
+                    }
+                } catch (Exception e) {
+                    LOG.error("Unable to parse policy YAML file {}", file, e);
                 }
             }
         }

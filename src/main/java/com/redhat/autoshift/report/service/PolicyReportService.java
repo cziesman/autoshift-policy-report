@@ -4,6 +4,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.redhat.autoshift.report.config.AutoShiftProperties;
 import com.redhat.autoshift.report.model.Cluster;
@@ -16,22 +21,21 @@ import com.redhat.autoshift.report.model.PolicySummary;
 import com.redhat.autoshift.report.model.Report;
 import com.redhat.autoshift.report.model.RepositoryInfo;
 import com.redhat.autoshift.report.repository.AutoShiftRepository;
+import com.redhat.autoshift.report.repository.RepositorySourceFactory;
 import com.redhat.autoshift.report.repository.YamlSupport;
 import com.redhat.autoshift.report.resolver.PolicyResolver;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class PolicyReportService {
 
     private static final Logger LOG = LoggerFactory.getLogger(PolicyReportService.class);
+    private static final String DEFAULT_BRANCH = "main";
 
     @Autowired
     private AutoShiftRepository repository;
@@ -43,164 +47,194 @@ public class PolicyReportService {
     private AutoShiftProperties properties;
 
     @Autowired
-    private com.redhat.autoshift.report.repository.RepositorySourceFactory repositorySourceFactory;
+    private RepositorySourceFactory repositorySourceFactory;
 
-    private volatile CachedReport cachedReport;
+    private final Map<String, CachedReport> cachedReports = new ConcurrentHashMap<>();
+    private final Set<String> refreshesInProgress = ConcurrentHashMap.newKeySet();
 
-    /**
-     * A single refresh worker prevents concurrent users from triggering duplicate
-     * repository refreshes while allowing requests to continue using the last
-     * successfully built report.
-     */
     private final ExecutorService refreshExecutor = Executors.newSingleThreadExecutor(r -> {
         Thread thread = new Thread(r, "autoshift-report-refresh");
         thread.setDaemon(true);
         return thread;
     });
 
-    private final AtomicBoolean refreshInProgress = new AtomicBoolean();
+    @PostConstruct
+    public void initializeDefaultReportCache() {
+        try {
+            LOG.info("Initializing report cache at application startup for default policy branch {} and site-values branch {}",
+                    DEFAULT_BRANCH, DEFAULT_BRANCH);
+            report(DEFAULT_BRANCH, DEFAULT_BRANCH);
+        } catch (Exception e) {
+            LOG.error("Unable to initialize report cache at application startup for default policy branch {} and site-values branch {}",
+                    DEFAULT_BRANCH, DEFAULT_BRANCH, e);
+        }
+    }
 
-    public RepositoryInfo policiesRepositoryInfo() throws IOException {
+    public Set<String> availablePolicyBranches() throws IOException {
+        return repositorySourceFactory.availablePolicyBranches();
+    }
 
+    public Set<String> availableSiteValuesBranches() throws IOException {
+        return repositorySourceFactory.availableSiteValuesBranches();
+    }
+
+    public String defaultBranch() {
+        return DEFAULT_BRANCH;
+    }
+
+    public RepositoryInfo policiesRepositoryInfo(String branch) {
         var config = properties.getPolicies();
-        return new RepositoryInfo(config.getLocation(), config.getBranch(), "policies");
+        return new RepositoryInfo(config.getLocation(), normalizeBranch(branch), "policies");
     }
 
-    public RepositoryInfo siteValuesRepositoryInfo() throws IOException {
-
+    public RepositoryInfo siteValuesRepositoryInfo(String branch) {
         var config = properties.getSiteValues();
-        return new RepositoryInfo(config.getLocation(), config.getBranch(), "autoshift/values");
+        return new RepositoryInfo(config.getLocation(), normalizeBranch(branch), "autoshift/values");
     }
 
-    private com.redhat.autoshift.report.repository.RepositorySource repositorySourcePolicies() throws IOException {
-
-        return repositorySourceFactory.policies();
+    public RepositoryInfo policiesRepositoryInfo() {
+        return policiesRepositoryInfo(defaultBranch());
     }
 
-    private com.redhat.autoshift.report.repository.RepositorySource repositorySourceSiteValues() throws IOException {
-
-        return repositorySourceFactory.siteValues();
+    public RepositoryInfo siteValuesRepositoryInfo() {
+        return siteValuesRepositoryInfo(defaultBranch());
     }
 
     public Report report() throws IOException {
+        return report(defaultBranch(), defaultBranch());
+    }
 
-        LOG.debug("Checking report cache");
+    public Report report(String policyBranch) throws IOException {
+        return report(policyBranch, defaultBranch());
+    }
 
-        CachedReport current = cachedReport;
+    public Report report(String policyBranch, String siteValuesBranch) throws IOException {
+        String selectedPolicyBranch = normalizeBranch(policyBranch);
+        String selectedSiteValuesBranch = normalizeBranch(siteValuesBranch);
+        String cacheKey = cacheKey(selectedPolicyBranch, selectedSiteValuesBranch);
+
+        CachedReport current = cachedReports.get(cacheKey);
         long now = System.currentTimeMillis();
         long cacheMillis = Math.max(0L, properties.getCacheSeconds()) * 1000L;
 
         if (current != null && cacheMillis > 0 && now - current.createdAt() < cacheMillis) {
-            LOG.debug("Returning cached report");
             return current.report();
         }
 
         if (cacheMillis <= 0) {
             synchronized (this) {
-                LOG.info("Report caching disabled; rebuilding report");
-                return rebuildReport();
+                LOG.info("Report caching disabled; rebuilding report for policy branch {} and site-values branch {}",
+                        selectedPolicyBranch, selectedSiteValuesBranch);
+                return rebuildReport(selectedPolicyBranch, selectedSiteValuesBranch, cacheKey);
             }
         }
 
-        // Once a report exists, don't make every user's request wait for Git/network
-        // access. Start one background refresh and continue serving the last good report.
         if (current != null) {
-            scheduleRefresh();
-            LOG.debug("Returning stale report while refresh is in progress");
+            scheduleRefresh(selectedPolicyBranch, selectedSiteValuesBranch, cacheKey);
             return current.report();
         }
 
-        // There is no report yet, so the first request must build it synchronously.
         synchronized (this) {
-            current = cachedReport;
+            current = cachedReports.get(cacheKey);
             if (current != null) {
                 return current.report();
             }
-            LOG.info("Report cache empty; building initial report");
-            return rebuildReport();
+            LOG.info("Report cache empty; building initial report for policy branch {} and site-values branch {}",
+                    selectedPolicyBranch, selectedSiteValuesBranch);
+            return rebuildReport(selectedPolicyBranch, selectedSiteValuesBranch, cacheKey);
         }
     }
 
-    private void scheduleRefresh() {
-
-        if (!refreshInProgress.compareAndSet(false, true)) {
+    private void scheduleRefresh(String policyBranch, String siteValuesBranch, String cacheKey) {
+        if (!refreshesInProgress.add(cacheKey)) {
             return;
         }
 
         refreshExecutor.submit(() -> {
             try {
                 synchronized (this) {
-                    LOG.info("Refreshing report cache in background");
-                    rebuildReport();
+                    LOG.info("Refreshing report cache in background for policy branch {} and site-values branch {}",
+                            policyBranch, siteValuesBranch);
+                    rebuildReport(policyBranch, siteValuesBranch, cacheKey);
                 }
             } catch (Exception e) {
-                // Keep the previous successful report available. A transient Git
-                // or parsing failure must not make the application unavailable.
-                LOG.error("Unable to refresh report cache; retaining previous report", e);
+                LOG.error("Unable to refresh report cache for policy branch {} and site-values branch {}; retaining previous report",
+                        policyBranch, siteValuesBranch, e);
             } finally {
-                refreshInProgress.set(false);
+                refreshesInProgress.remove(cacheKey);
             }
         });
     }
 
-    private Report rebuildReport() throws IOException {
-
+    private Report rebuildReport(String policyBranch, String siteValuesBranch, String cacheKey) throws IOException {
         long start = System.currentTimeMillis();
-        List<Cluster> clusters = repository.clusters();
-        List<ClusterSet> sets = repository.clusterSets();
-        List<PolicyDefinition> policies = repository.policies();
-        List<ClusterReport> clusterReports = clusters.stream().map(c ->
-                resolver.clusterReport(c, resolveClusterSet(c, sets), policies, clusters)).toList();
-        Report report = new Report(clusters, sets, policies, clusterReports,
+        List<Cluster> clusters = repository.clusters(siteValuesBranch);
+        List<ClusterSet> sets = repository.clusterSets(siteValuesBranch);
+        List<PolicyDefinition> policies = repository.policies(policyBranch, siteValuesBranch);
+
+        List<ClusterReport> clusterReports = clusters.stream()
+                .map(c -> resolver.clusterReport(c, resolveClusterSet(c, sets), policies, clusters))
+                .toList();
+
+        Report report = new Report(
+                clusters,
+                sets,
+                policies,
+                clusterReports,
                 resolver.policySummaries(clusters, sets, policies));
-        LOG.info(
-                "Report rebuilt in {} ms: {} policies, {} clustersets, {} clusters",
+
+        LOG.info("Report rebuilt in {} ms for policy branch {} and site-values branch {}: {} policies, {} clustersets, {} clusters",
                 System.currentTimeMillis() - start,
+                policyBranch,
+                siteValuesBranch,
                 report.policies().size(),
                 report.clusterSets().size(),
                 report.clusters().size());
-        cachedReport = new CachedReport(report, System.currentTimeMillis());
+
+        cachedReports.put(cacheKey, new CachedReport(report, System.currentTimeMillis()));
         return report;
     }
 
-    public void clearCache() {
+    private String cacheKey(String policyBranch, String siteValuesBranch) {
+        return policyBranch + "\\0" + siteValuesBranch;
+    }
 
-        cachedReport = null;
+    public void clearCache() {
+        cachedReports.clear();
     }
 
     @PreDestroy
     public void shutdown() {
-
         refreshExecutor.shutdownNow();
     }
 
-    public ClusterReport cluster(String sourceName, String name) throws IOException {
-
-        return report().clusterReports().stream()
-                .filter(r -> r.cluster().sourceName().equals(sourceName) && r.cluster().name().equals(name))
+    public ClusterReport cluster(String sourceName, String name, String policyBranch, String siteValuesBranch) throws IOException {
+        return report(policyBranch, siteValuesBranch).clusterReports().stream()
+                .filter(r -> r.cluster().sourceName().equals(sourceName)
+                        && r.cluster().name().equals(name))
                 .findFirst().orElse(null);
     }
 
-    public ClusterReport cluster(String name) throws IOException {
-
-        List<ClusterReport> matches = report().clusterReports().stream()
+    public ClusterReport cluster(String name, String policyBranch, String siteValuesBranch) throws IOException {
+        List<ClusterReport> matches = report(policyBranch, siteValuesBranch).clusterReports().stream()
                 .filter(r -> r.cluster().name().equals(name)).toList();
         return matches.size() == 1 ? matches.get(0) : null;
     }
 
-    public PolicySummary policy(String name) throws IOException {
-
-        return report().policySummaries().stream().filter(p -> p.policy().name().equals(name)).findFirst().orElse(null);
+    public PolicySummary policy(String name, String policyBranch, String siteValuesBranch) throws IOException {
+        return report(policyBranch, siteValuesBranch).policySummaries().stream()
+                .filter(p -> p.policy().name().equals(name))
+                .findFirst().orElse(null);
     }
 
-    public ClusterSetReport clusterSet(String sourceName, String type, String name) throws IOException {
-
-        Report report = report();
+    public ClusterSetReport clusterSet(String sourceName, String type, String name, String policyBranch, String siteValuesBranch) throws IOException {
+        Report report = report(policyBranch, siteValuesBranch);
         ClusterSet clusterSet = report.clusterSets().stream()
                 .filter(s -> s.sourceName().equals(sourceName))
                 .filter(s -> s.type().equals(type))
                 .filter(s -> s.name().equals(name))
                 .findFirst().orElse(null);
+
         if (clusterSet == null) {
             return null;
         }
@@ -208,43 +242,54 @@ public class PolicyReportService {
         List<Cluster> members = report.clusters().stream()
                 .filter(c -> name.equals(c.clusterSet()))
                 .toList();
+
         List<PolicyEvaluation> evaluations = resolver.clusterSetPolicies(clusterSet, report.policies());
         Map<String, Object> config = YamlSupport.map(clusterSet.values().get("config"));
-        return new ClusterSetReport(clusterSet, members, evaluations, config,
+
+        return new ClusterSetReport(
+                clusterSet,
+                members,
+                evaluations,
+                config,
                 properties.getSiteValues().getLocation());
     }
 
     private ClusterSet resolveClusterSet(Cluster cluster, List<ClusterSet> sets) {
-
         List<ClusterSet> matches = sets.stream()
                 .filter(s -> "managedClusterSets".equals(s.type()))
                 .filter(s -> Objects.equals(s.name(), cluster.clusterSet()))
                 .toList();
+
         if (matches.size() == 1) {
             return matches.get(0);
         }
         if (matches.size() > 1) {
-            // If the cluster and ClusterSet values files share a basename, use that profile.
             String clusterBase = stripExtension(cluster.sourceName());
             List<ClusterSet> sameProfile = matches.stream()
-                    .filter(s -> stripExtension(s.sourceName()).equals(clusterBase)).toList();
+                    .filter(s -> stripExtension(s.sourceName()).equals(clusterBase))
+                    .toList();
             if (sameProfile.size() == 1) {
                 return sameProfile.get(0);
             }
-            return null; // ambiguous: never silently choose one
+            return null;
         }
-        matches = sets.stream().filter(s -> Objects.equals(s.name(), cluster.clusterSet())).toList();
+
+        matches = sets.stream()
+                .filter(s -> Objects.equals(s.name(), cluster.clusterSet()))
+                .toList();
+
         return matches.size() == 1 ? matches.get(0) : null;
     }
 
     private String stripExtension(String value) {
-
         int i = value.lastIndexOf('.');
         return i > 0 ? value.substring(0, i) : value;
     }
 
-    private record CachedReport(Report report, long createdAt) {
-
+    private String normalizeBranch(String branch) {
+        return branch == null || branch.isBlank() ? DEFAULT_BRANCH : branch;
     }
 
+    private record CachedReport(Report report, long createdAt) {
+    }
 }

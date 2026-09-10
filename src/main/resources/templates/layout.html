@@ -28,6 +28,27 @@
   </script>
   <link rel="stylesheet" href="/css/application.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/codemirror.min.css">
+  <script>
+    function showReportLoading(form) {
+      var overlay = document.getElementById('report-loading-overlay');
+      if (overlay) {
+        overlay.classList.add('visible');
+        overlay.setAttribute('aria-hidden', 'false');
+      }
+
+      // Do not disable the select before form.submit(). A disabled form
+      // control is not a successful form control and therefore would not
+      // contribute its branch parameter to the GET request. The overlay
+      // already prevents the user from interacting with the page while
+      // the request is in progress.
+
+      // Give the browser an opportunity to paint the overlay before
+      // starting the potentially long-running report rebuild request.
+      window.setTimeout(function () {
+        form.submit();
+      }, 50);
+    }
+  </script>
 </head>
 <body>
 <header th:fragment="nav" class="app-navbar">
@@ -42,5 +63,12 @@
     <a href="/policies" th:classappend="${currentPage == 'policies'} ? ' active' : ''">Policies</a>
   </nav>
 </header>
+<div th:fragment="loading" id="report-loading-overlay" class="report-loading-overlay" aria-hidden="true">
+  <div class="report-loading-dialog" role="status" aria-live="polite">
+    <div class="report-loading-spinner" aria-hidden="true"></div>
+    <div class="report-loading-title">Reloading report</div>
+    <div class="report-loading-message">Loading repository data and rebuilding the report&hellip;</div>
+  </div>
+</div>
 </body>
 </html>

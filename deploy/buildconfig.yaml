@@ -3,35 +3,37 @@ kind: ImageStream
 metadata:
   name: autoshift-policy-report
 spec: {}
-
 ---
 apiVersion: build.openshift.io/v1
 kind: BuildConfig
 metadata:
   name: autoshift-policy-report
-
 spec:
   source:
     type: Git
     git:
       uri: https://github.com/cziesman/autoshift-policy-report.git
       ref: main
-#    sourceSecret:
-#      name: autoshift-policy-report
-
+    #    sourceSecret:
+    #      name: autoshift-policy-report
+    secrets:
+      - secret:
+          name: autoshift-policy-report-settings-xml
+        destinationDir: /tmp/settings/
   strategy:
     type: Source
     sourceStrategy:
       from:
         kind: DockerImage
         name: registry.redhat.io/ubi9/openjdk-17:1.24
-      pullSecret:
-        name: registry-redhat-io
-
+      env:
+        - name: MAVEN_SETTINGS_XML
+          value: /tmp/settings/settings.xml
+        - name: MAVEN_OPTS
+          value: '-Dmaven.resolver.transport=wagon -Dmaven.wagon.http.ssl.insecure=true'
   output:
     to:
       kind: ImageStreamTag
       name: autoshift-policy-report:latest
-
   triggers:
     - type: ConfigChange

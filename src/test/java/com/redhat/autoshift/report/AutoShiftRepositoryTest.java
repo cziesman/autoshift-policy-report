@@ -74,7 +74,7 @@ class AutoShiftRepositoryTest {
                         "openshift-gitops",
                         "tempo");
         assertThat(repository.policiesRoot().toString()).endsWith("policies");
-        assertThat(repository.siteValuesRoot().toString()).endsWith("values");
+        assertThat(repository.siteValuesRoot().toString()).endsWith("autoshift");
         assertThat(repository.clusterSets()).extracting("name").containsExactly("managed", "sbx");
         assertThat(repository.clusters()).extracting("name").containsExactly("cluster-a", "cluster-b");
         assertThat(repository.policies().get(0).excluded()).isTrue();
@@ -89,7 +89,7 @@ class AutoShiftRepositoryTest {
     @Test
     void preservesDuplicateClusterSetNamesAcrossValuesFiles() throws Exception {
         Path root = Files.createTempDirectory("autoshift-test-");
-        Path dir = root.resolve("autoshift/values/clustersets");
+        Path dir = root.resolve("autoshift/clustersets");
         Files.createDirectories(dir);
         Files.writeString(dir.resolve("profile-a.yaml"), """
                 managedClusterSets:
@@ -116,7 +116,7 @@ class AutoShiftRepositoryTest {
     @Test
     void preservesDuplicateClusterNamesAcrossValuesFiles() throws Exception {
         Path root = Files.createTempDirectory("autoshift-test-");
-        Path dir = root.resolve("autoshift/values/clusters");
+        Path dir = root.resolve("autoshift/clusters");
         Files.createDirectories(dir);
         Files.writeString(dir.resolve("profile-a.yaml"), """
                 clusters:
@@ -191,7 +191,7 @@ class AutoShiftRepositoryTest {
     @Test
     void readsClustersAndClusterSetsFromEnvironmentSubdirectories() throws Exception {
         Path root = Files.createTempDirectory("autoshift-environments-");
-        Path values = root.resolve("autoshift/values");
+        Path values = root.resolve("autoshift");
         Files.createDirectories(values.resolve("clusters/dev"));
         Files.createDirectories(values.resolve("clusters/qa"));
         Files.createDirectories(values.resolve("clustersets/dev"));
@@ -237,7 +237,7 @@ class AutoShiftRepositoryTest {
     @Test
     void resolvesSiteValuesDirectoryWhenConfiguredAtValuesRoot() throws Exception {
         Path root = Files.createTempDirectory("autoshift-values-");
-        Path values = root.resolve("values");
+        Path values = root.resolve("autoshift");
         Files.createDirectories(values.resolve("clusters"));
         Files.createDirectories(values.resolve("clustersets"));
 

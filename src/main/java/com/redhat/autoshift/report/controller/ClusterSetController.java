@@ -27,6 +27,7 @@ public class ClusterSetController {
         for (var cs : report.clusterSets()) {
             long count = report.clusters().stream()
                     .filter(c -> cs.name().equals(c.clusterSet()))
+                    .filter(c -> cs.environment().equals(c.environment()))
                     .count();
             clusterCounts.put(cs.id(), count);
         }

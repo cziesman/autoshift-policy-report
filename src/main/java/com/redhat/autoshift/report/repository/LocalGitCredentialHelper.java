@@ -16,19 +16,19 @@ import java.util.Map;
  * macOS osxkeychain, Git Credential Manager, libsecret, or the file helper to
  * be used without the application knowing where credentials are stored.
  */
-final class LocalGitCredentialHelper {
+public final class LocalGitCredentialHelper {
 
     private final String gitExecutable;
 
-    LocalGitCredentialHelper() {
+    public LocalGitCredentialHelper() {
         this("git");
     }
 
-    LocalGitCredentialHelper(String gitExecutable) {
+    public LocalGitCredentialHelper(String gitExecutable) {
         this.gitExecutable = gitExecutable;
     }
 
-    GitCredentials lookup(String repositoryUri) {
+    public GitCredentials lookup(String repositoryUri) {
         URI uri;
         try {
             uri = URI.create(repositoryUri);

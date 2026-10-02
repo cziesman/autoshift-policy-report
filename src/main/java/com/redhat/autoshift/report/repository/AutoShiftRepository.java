@@ -73,8 +73,8 @@ public class AutoShiftRepository {
     private Path resolveSiteValuesRoot(Path root) throws IOException {
 
         Path[] candidates = {
-                root.resolve("autoshift/values"),
-                root.resolve("values"),
+                root.resolve("autoshift"),
+                root.resolve("autoshift"),
                 root
         };
         for (Path candidate : candidates) {

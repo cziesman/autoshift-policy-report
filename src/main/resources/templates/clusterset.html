@@ -8,6 +8,7 @@
                 <h1 th:text="${report.clusterSet.name}">managed</h1>
                 <div class="meta">
                     <rh-tag variant="desaturated" th:text="${report.clusterSet.type}">managedClusterSets</rh-tag>
+                    <span>Environment: <strong th:text="${report.clusterSet.environment}">dev</strong></span>
                     <span>Repository: <strong th:text="${report.repositoryLocation}">site-values</strong></span>
                     <span>Source: <strong th:text="${report.clusterSet.sourceName}">managed.yaml</strong></span>
                 </div>

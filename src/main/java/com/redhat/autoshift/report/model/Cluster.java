@@ -14,6 +14,14 @@ public record Cluster(String name, String clusterSet, Map<String, Object> values
     /**
      * A cluster name is only unique within its values file.
      */
+    public String environment() {
+
+        if (source == null || source.getNameCount() < 2) {
+            return "root";
+        }
+        return source.getName(0).toString();
+    }
+
     public String id() {
 
         return sourceName() + ":" + name;

@@ -5,7 +5,7 @@ Read-only Spring Boot + Thymeleaf application that reports which AutoShift polic
 The application intentionally separates the two repositories that provide the inputs:
 
 1. **Policy repository** — the AutoShift repository containing `policies/stable`, `policies/certified`, and `policies/community`.
-2. **Site values repository** — the site-specific repository containing `autoshift/values/global.yaml`, `clustersets/*.yaml`, and `clusters/*.yaml`.
+2. **Site values repository** — the site-specific repository containing `autoshift/global.yaml`, `clustersets/*.yaml`, and `clusters/*.yaml`.
 
 This matches the desired deployment model where policies come from the AutoShift mirror/policy branch while site-specific cluster and ClusterSet configuration remains in the site values repository.
 
@@ -21,11 +21,11 @@ autoshift:
       location: /path/to/site-values
       branch: main
       # Optional path within the repository.
-      path: autoshift/values
+      path: autoshift
     refresh-on-request: true
 ```
 
-The `path` property is optional and is interpreted relative to the repository root. For example, if the site-values repository stores its content under `config/autoshift/values`, configure `path: config/autoshift/values`. The same setting works for both Git URLs and local repository directories. When `path` is empty, the application retains its automatic site-values discovery (`autoshift/values`, `values`, or the repository root).
+The `path` property is optional and is interpreted relative to the repository root. For example, if the site-values repository stores its content under `config/autoshift`, configure `path: config/autoshift`. The same setting works for both Git URLs and local repository directories. When `path` is empty, the application retains its automatic site-values discovery (`autoshift`, `values`, or the repository root).
 
 Each `location` may be either:
 
@@ -93,7 +93,7 @@ ClusterSet label
 global/default context
 ```
 
-`excludePolicies` is read from the **site values repository's** `autoshift/values/global.yaml`, and the policy folder name is used for the exclusion lookup.
+`excludePolicies` is read from the **site values repository's** `autoshift/global.yaml`, and the policy folder name is used for the exclusion lookup.
 
 ## Run
 

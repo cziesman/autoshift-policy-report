@@ -31,14 +31,14 @@ autoshift:
       # Optional token for private HTTP(S) repositories. If empty, local Git credentials are used when available; otherwise access is anonymous.
       token: ${AUTOSHIFT_REPORT_POLICIES_TOKEN:}
 
-    # The site values repository contains autoshift/values/.
+    # The site values repository contains autoshift/.
     site-values:
       # Can be a local filesystem path or a Git repository URL.
       location: /path/to/site-values
       branch: main
       # Optional path within the repository containing the site values.
-      # Leave empty to use the built-in autoshift/values, values, or repository-root discovery.
-      path: autoshift/values
+      # Leave empty to use the built-in autoshift, values, or repository-root discovery.
+      path: autoshift
       # Optional token for private HTTP(S) repositories. If empty, local Git credentials are used when available; otherwise access is anonymous.
       token: ${AUTOSHIFT_REPORT_SITE_VALUES_TOKEN:}
 

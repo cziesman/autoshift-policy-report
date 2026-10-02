@@ -1,5 +1,7 @@
-package com.redhat.autoshift.report.repository;
+package com.redhat.autoshift.report;
 
+import com.redhat.autoshift.report.repository.GitCredentials;
+import com.redhat.autoshift.report.repository.LocalGitCredentialHelper;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;

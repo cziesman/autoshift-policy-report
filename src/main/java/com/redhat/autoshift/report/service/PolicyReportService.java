@@ -91,7 +91,7 @@ public class PolicyReportService {
         var config = properties.getSiteValues();
         String contentPath = config.getPath();
         if (contentPath == null || contentPath.isBlank()) {
-            contentPath = "autoshift/values";
+            contentPath = "autoshift";
         }
         return new RepositoryInfo(config.getLocation(), normalizeBranch(branch), contentPath);
     }
@@ -268,6 +268,13 @@ public class PolicyReportService {
             return matches.get(0);
         }
         if (matches.size() > 1) {
+            List<ClusterSet> sameEnvironment = matches.stream()
+                    .filter(s -> s.environment().equals(cluster.environment()))
+                    .toList();
+            if (sameEnvironment.size() == 1) {
+                return sameEnvironment.get(0);
+            }
+
             String clusterBase = stripExtension(cluster.sourceName());
             List<ClusterSet> sameProfile = matches.stream()
                     .filter(s -> stripExtension(s.sourceName()).equals(clusterBase))

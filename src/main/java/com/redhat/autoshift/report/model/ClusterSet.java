@@ -19,4 +19,12 @@ public record ClusterSet(String name, String type, Map<String, Object> values, M
         return source == null ? "unknown" : source.toString().replace('\\', '/');
     }
 
+    public String environment() {
+
+        if (source == null || source.getNameCount() < 2) {
+            return "root";
+        }
+        return source.getName(0).toString();
+    }
+
 }

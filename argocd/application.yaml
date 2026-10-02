@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: autoshift-policy-report
+  namespace: openshift-gitops
+spec:
+  project: default
+
+  source:
+    repoURL: https://gitlab.example.com/platform/autoshift-policy-report.git
+    targetRevision: main
+    path: deploy
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: autoshift
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: autoshift-policy-report
+  namespace: autoshift
+data:
+  AUTOSHIFT_REPORT_POLICIES_LOCATION: "https://gitlab.example.com/platform/autoshiftv2.git"
+  AUTOSHIFT_REPORT_POLICIES_BRANCH: "main"
+
+  AUTOSHIFT_REPORT_SITE_VALUES_LOCATION: "https://gitlab.example.com/platform/autoshift-inventories.git"
+  AUTOSHIFT_REPORT_SITE_VALUES_BRANCH: "main"
+
+  AUTOSHIFT_REPORT_REFRESH_ON_REQUEST: "true"
+  AUTOSHIFT_REPORT_CACHE_SECONDS: "300"

@@ -159,6 +159,36 @@ class AutoShiftRepositoryTest {
     }
 
     @Test
+    void resolvesSiteValuesUsingExplicitRepositoryPath() throws Exception {
+        Path root = Files.createTempDirectory("autoshift-values-path-");
+        Path values = root.resolve("config/site-values");
+        Files.createDirectories(values.resolve("clusters"));
+        Files.createDirectories(values.resolve("clustersets"));
+        Files.writeString(values.resolve("global.yaml"), "excludePolicies: []\n");
+
+        AutoShiftProperties p = new AutoShiftProperties();
+        p.getSiteValues().setLocation(root.toString());
+        p.getSiteValues().setPath("config/site-values");
+
+        AutoShiftRepository repository =
+                new AutoShiftRepository(new RepositorySourceFactory(p), new YamlSupport());
+
+        assertThat(repository.siteValuesRoot()).isEqualTo(values);
+    }
+
+    @Test
+    void repositoryPathCannotEscapeLocalRepositoryRoot() {
+        AutoShiftProperties p = new AutoShiftProperties();
+        p.getSiteValues().setLocation("/tmp/site-values");
+        p.getSiteValues().setPath("../outside");
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> new RepositorySourceFactory(p).siteValues())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must not escape the repository root");
+    }
+
+    @Test
     void resolvesSiteValuesDirectoryWhenConfiguredAtValuesRoot() throws Exception {
         Path root = Files.createTempDirectory("autoshift-values-");
         Path values = root.resolve("values");

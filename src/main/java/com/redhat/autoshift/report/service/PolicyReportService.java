@@ -89,7 +89,11 @@ public class PolicyReportService {
 
     public RepositoryInfo siteValuesRepositoryInfo(String branch) {
         var config = properties.getSiteValues();
-        return new RepositoryInfo(config.getLocation(), normalizeBranch(branch), "autoshift/values");
+        String contentPath = config.getPath();
+        if (contentPath == null || contentPath.isBlank()) {
+            contentPath = "autoshift/values";
+        }
+        return new RepositoryInfo(config.getLocation(), normalizeBranch(branch), contentPath);
     }
 
     public RepositoryInfo policiesRepositoryInfo() {

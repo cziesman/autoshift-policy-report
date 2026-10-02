@@ -20,8 +20,12 @@ autoshift:
     site-values:
       location: /path/to/site-values
       branch: main
+      # Optional path within the repository.
+      path: autoshift/values
     refresh-on-request: true
 ```
+
+The `path` property is optional and is interpreted relative to the repository root. For example, if the site-values repository stores its content under `config/autoshift/values`, configure `path: config/autoshift/values`. The same setting works for both Git URLs and local repository directories. When `path` is empty, the application retains its automatic site-values discovery (`autoshift/values`, `values`, or the repository root).
 
 Each `location` may be either:
 
@@ -121,16 +125,24 @@ This is a source/configuration report, not a live ACM compliance report. It repo
 # autoshift-policy-report
 
 
-## Private repositories
+## Repository authentication
 
-HTTP(S) Git repositories can be authenticated with an access token. Configure the token through the `token` property, preferably using an environment variable or Kubernetes/OpenShift Secret. The token is never included in repository display information or logs.
+HTTP(S) Git repositories support all of the following authentication modes:
 
-For OpenShift, the deployment expects an optional Secret named `autoshift-policy-report-repository-credentials` with keys `policies-token` and `site-values-token`. A template is provided at `deploy/repository-secret.example.yaml`. Create the real Secret separately, for example:
+1. **Explicit token** — if the repository `token` property is configured, that token is used.
+2. **Local Git credentials** — when no token is configured, a locally running instance asks the user's normal Git credential helper for credentials using `git credential fill`. This allows configured helpers such as macOS Keychain, Git Credential Manager, libsecret, or the Git credential file to be used without copying credentials into application configuration.
+3. **Anonymous access** — if no credentials are configured or available, the application attempts the repository anonymously. This allows public repositories to work without any authentication configuration.
+
+The same resolution is applied independently to the policy repository and the site values repository. SSH and other non-HTTP(S) repository URLs are not passed through the HTTP credential-helper mechanism.
+
+For OpenShift, the deployment can supply tokens through the optional Secret named `autoshift-policy-report-repository-credentials` with keys `policies-token` and `site-values-token`. A template is provided at `deploy/repository-secret.example.yaml`. Create the real Secret separately, for example:
 
 ```bash
 oc create secret generic autoshift-policy-report-repository-credentials \
   --from-literal=policies-token='YOUR_TOKEN' \
   --from-literal=site-values-token='YOUR_TOKEN'
 ```
+
+If the Secret is absent, empty, or a particular token key is not populated, the application does not fail merely because authentication is not configured. It falls back to anonymous access.
 
 The application uses a shared, thread-safe in-memory report cache. Multiple users can read the application concurrently without each request cloning or parsing the repositories. When a cached report exists, an expired cache is refreshed in the background so users continue to receive the last successful report during a refresh. The first load still waits for the initial report to be built.

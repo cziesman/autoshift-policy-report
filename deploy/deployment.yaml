@@ -23,6 +23,9 @@ spec:
             - name: AUTOSHIFT_REPORT_SITE_VALUES_LOCATION
               value: "https://github.com/cziesman/autoshift-inventories"
 
+            - name: AUTOSHIFT_REPORT_SITE_VALUES_PATH
+              value: "autoshift/values"
+
             # Optional repository authentication. The Secret is intentionally not included here.
             - name: AUTOSHIFT_REPORT_POLICIES_TOKEN
               valueFrom:

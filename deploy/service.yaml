@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: autoshift-policy-report
+  namespace: autoshift
+  labels:
+    app.kubernetes.io/name: autoshift-policy-report
+spec:
+  selector:
+    app.kubernetes.io/name: autoshift-policy-report
+
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+
+    - name: management
+      port: 8081
+      targetPort: management
+      protocol: TCP

@@ -59,6 +59,9 @@ public class AutoShiftProperties {
 
         private String branch = "main";
 
+        /** Optional path within the repository containing the configured content. */
+        private String path;
+
         /** Optional personal/access token used for authenticated HTTP(S) Git repositories. */
         private String token;
 
@@ -80,6 +83,16 @@ public class AutoShiftProperties {
         public void setBranch(String branch) {
 
             this.branch = branch;
+        }
+
+        public String getPath() {
+
+            return path;
+        }
+
+        public void setPath(String path) {
+
+            this.path = path;
         }
 
         public String getToken() {

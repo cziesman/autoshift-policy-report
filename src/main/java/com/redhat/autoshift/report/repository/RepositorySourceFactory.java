@@ -14,8 +14,10 @@ import com.redhat.autoshift.report.config.AutoShiftProperties;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.transport.CredentialItem;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
+import org.eclipse.jgit.transport.URIish;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -24,6 +26,7 @@ public class RepositorySourceFactory {
     private final AutoShiftProperties properties;
 
     private final Map<String, GitRepositorySource> gitSources = new ConcurrentHashMap<>();
+    private final LocalGitCredentialHelper localGitCredentialHelper = new LocalGitCredentialHelper();
 
     public RepositorySourceFactory(AutoShiftProperties properties) {
         this.properties = properties;
@@ -94,17 +97,43 @@ public class RepositorySourceFactory {
                 : branch;
 
         if (isGitLocation(location)) {
-            String key = location + "@" + effectiveBranch;
+            String path = normalizeRepositoryPath(config.getPath());
+            String key = location + "@" + effectiveBranch + "@" + path;
             return gitSources.computeIfAbsent(key,
-                    ignored -> new GitRepositorySource(location, effectiveBranch, config.getToken(),
+                    ignored -> new GitRepositorySource(location, effectiveBranch, path, config.getToken(),
                             properties.isRefreshOnRequest()));
         }
 
         Path path = Paths.get(location).toAbsolutePath().normalize();
+        String repositoryPath = normalizeRepositoryPath(config.getPath());
+        if (!repositoryPath.isBlank()) {
+            path = path.resolve(repositoryPath).normalize();
+        }
         if (!Files.isDirectory(path)) {
             throw new IOException("Repository path does not exist or is not a directory: " + path);
         }
         return new LocalRepositorySource(path);
+    }
+
+    private String normalizeRepositoryPath(String path) {
+        if (path == null || path.isBlank()) {
+            return "";
+        }
+        String normalized = path.trim().replace('\\', '/');
+        while (normalized.startsWith("/")) {
+            normalized = normalized.substring(1);
+        }
+        while (normalized.endsWith("/")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        if (normalized.equals(".")) {
+            return "";
+        }
+        Path normalizedPath = Paths.get(normalized).normalize();
+        if (normalizedPath.isAbsolute() || normalizedPath.startsWith("..")) {
+            throw new IllegalArgumentException("Repository path must not escape the repository root: " + path);
+        }
+        return normalizedPath.toString().replace('\\', '/');
     }
 
     private String configuredBranch(AutoShiftProperties.RepositoryProperties config) {
@@ -124,10 +153,58 @@ public class RepositorySourceFactory {
     }
 
     private java.util.Optional<CredentialsProvider> credentialsProvider(String token, String uri) {
-        if (token == null || token.isBlank() || !isHttpUrl(uri)) {
+        if (!isHttpUrl(uri)) {
             return java.util.Optional.empty();
         }
-        return java.util.Optional.of(new UsernamePasswordCredentialsProvider("git", token));
+
+        // An explicitly configured token always wins. This is the path used by
+        // the OpenShift Secret and also remains available for local overrides.
+        if (token != null && !token.isBlank()) {
+            return java.util.Optional.of(new UsernamePasswordCredentialsProvider("git", token));
+        }
+
+        // When no token is configured, use the same Git credential helper that
+        // the local user's normal Git commands use. If no credential is available,
+        // return empty so JGit can access a public repository anonymously.
+        GitCredentials credentials = localGitCredentialHelper.lookup(uri);
+        if (credentials == null) {
+            return java.util.Optional.empty();
+        }
+
+        return java.util.Optional.of(new CredentialsProvider() {
+            @Override
+            public boolean isInteractive() {
+                return false;
+            }
+
+            @Override
+            public boolean supports(CredentialItem... items) {
+                for (CredentialItem item : items) {
+                    if (!(item instanceof CredentialItem.Username
+                            || item instanceof CredentialItem.Password
+                            || item instanceof CredentialItem.InformationalMessage)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            @Override
+            public boolean get(URIish uri, CredentialItem... items) {
+                for (CredentialItem item : items) {
+                    if (item instanceof CredentialItem.Username username) {
+                        username.setValue(credentials.username());
+                    } else if (item instanceof CredentialItem.Password password) {
+                        password.setValue(credentials.password().toCharArray());
+                    } else if (item instanceof CredentialItem.InformationalMessage) {
+                        // The credential helper has already supplied the credentials.
+                    } else {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        });
     }
 
     private static final class LocalRepositorySource implements RepositorySource {
@@ -151,14 +228,16 @@ public class RepositorySourceFactory {
     private final class GitRepositorySource implements RepositorySource {
         private final String uri;
         private final String branch;
+        private final String repositoryPath;
         private final String token;
         private final boolean refresh;
         private Path root;
         private Git git;
 
-        private GitRepositorySource(String uri, String branch, String token, boolean refresh) {
+        private GitRepositorySource(String uri, String branch, String repositoryPath, String token, boolean refresh) {
             this.uri = uri;
             this.branch = branch;
+            this.repositoryPath = repositoryPath;
             this.token = token;
             this.refresh = refresh;
         }
@@ -175,7 +254,11 @@ public class RepositorySourceFactory {
                             .setBranch(branch);
                     credentialsProvider(token, uri).ifPresent(command::setCredentialsProvider);
                     git = command.call();
-                    root = checkout;
+                    root = repositoryPath.isBlank() ? checkout : checkout.resolve(repositoryPath).normalize();
+                    if (!Files.isDirectory(root)) {
+                        throw new IOException("Configured repository path does not exist in Git repository " + uri
+                                + ": " + repositoryPath);
+                    }
                 } else if (refresh) {
                     var fetch = git.fetch().setRemote("origin");
                     credentialsProvider(token, uri).ifPresent(fetch::setCredentialsProvider);
@@ -206,7 +289,7 @@ public class RepositorySourceFactory {
 
         @Override
         public String displayName() {
-            return uri + " [" + branch + "]";
+            return uri + " [" + branch + "]" + (repositoryPath.isBlank() ? "" : " / " + repositoryPath);
         }
     }
 }

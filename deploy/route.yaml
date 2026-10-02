@@ -1,0 +1,17 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: autoshift-policy-report
+  namespace: autoshift
+spec:
+  to:
+    kind: Service
+    name: autoshift-policy-report
+    weight: 100
+
+  port:
+    targetPort: http
+
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

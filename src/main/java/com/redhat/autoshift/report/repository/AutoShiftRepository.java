@@ -74,7 +74,6 @@ public class AutoShiftRepository {
 
         Path[] candidates = {
                 root.resolve("autoshift"),
-                root.resolve("autoshift"),
                 root
         };
         for (Path candidate : candidates) {

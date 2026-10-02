@@ -8,7 +8,7 @@ public record Cluster(String name, String clusterSet, Map<String, Object> values
 
     public String sourceName() {
 
-        return source == null || source.getFileName() == null ? "unknown" : source.getFileName().toString();
+        return source == null ? "unknown" : source.toString().replace('\\', '/');
     }
 
     /**

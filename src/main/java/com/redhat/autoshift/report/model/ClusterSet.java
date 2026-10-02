@@ -16,7 +16,7 @@ public record ClusterSet(String name, String type, Map<String, Object> values, M
 
     public String sourceName() {
 
-        return source == null || source.getFileName() == null ? "unknown" : source.getFileName().toString();
+        return source == null ? "unknown" : source.toString().replace('\\', '/');
     }
 
 }

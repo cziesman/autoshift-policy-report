@@ -25,7 +25,7 @@ public class ClusterController {
         return "clusters";
     }
 
-    @GetMapping("/clusters/{source}/{name}")
+    @GetMapping("/clusters/{source:.+}/{name}")
     public String cluster(
             @PathVariable String source,
             @PathVariable String name,

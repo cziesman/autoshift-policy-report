@@ -39,7 +39,7 @@ public class ClusterSetController {
         return "clustersets";
     }
 
-    @GetMapping("/clustersets/{type}/{source}/{name}")
+    @GetMapping("/clustersets/{type}/{source:.+}/{name}")
     public String clusterSet(
             @PathVariable String type,
             @PathVariable String source,

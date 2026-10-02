@@ -189,6 +189,52 @@ class AutoShiftRepositoryTest {
     }
 
     @Test
+    void readsClustersAndClusterSetsFromEnvironmentSubdirectories() throws Exception {
+        Path root = Files.createTempDirectory("autoshift-environments-");
+        Path values = root.resolve("autoshift/values");
+        Files.createDirectories(values.resolve("clusters/dev"));
+        Files.createDirectories(values.resolve("clusters/qa"));
+        Files.createDirectories(values.resolve("clustersets/dev"));
+        Files.createDirectories(values.resolve("clustersets/qa"));
+
+        Files.writeString(values.resolve("clusters/dev/clusters.yaml"), """
+                clusters:
+                  dev-01:
+                    config:
+                      clusterSet: managed
+                """);
+        Files.writeString(values.resolve("clusters/qa/clusters.yaml"), """
+                clusters:
+                  qa-01:
+                    config:
+                      clusterSet: managed
+                """);
+        Files.writeString(values.resolve("clustersets/dev/managed.yaml"), """
+                managedClusterSets:
+                  managed:
+                    labels:
+                      environment: dev
+                """);
+        Files.writeString(values.resolve("clustersets/qa/managed.yaml"), """
+                managedClusterSets:
+                  managed:
+                    labels:
+                      environment: qa
+                """);
+
+        AutoShiftProperties p = new AutoShiftProperties();
+        p.getSiteValues().setLocation(root.toString());
+
+        AutoShiftRepository repository = new AutoShiftRepository(
+                new RepositorySourceFactory(p), new YamlSupport());
+
+        assertThat(repository.clusters()).extracting(com.redhat.autoshift.report.model.Cluster::sourceName)
+                .containsExactly("dev/clusters.yaml", "qa/clusters.yaml");
+        assertThat(repository.clusterSets()).extracting(com.redhat.autoshift.report.model.ClusterSet::sourceName)
+                .containsExactly("dev/managed.yaml", "qa/managed.yaml");
+    }
+
+    @Test
     void resolvesSiteValuesDirectoryWhenConfiguredAtValuesRoot() throws Exception {
         Path root = Files.createTempDirectory("autoshift-values-");
         Path values = root.resolve("values");

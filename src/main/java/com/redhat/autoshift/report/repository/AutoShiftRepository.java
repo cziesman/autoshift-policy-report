@@ -120,9 +120,10 @@ public class AutoShiftRepository {
             return List.of();
         }
         List<ClusterSet> result = new ArrayList<>();
-        try (var stream = Files.list(dir)) {
-            for (Path file : stream.filter(this::isYaml).filter(this::isRealValuesFile).sorted().toList()) {
-                result.addAll(parseClusterSets(yaml.read(file), file));
+        try (var walk = Files.walk(dir)) {
+            for (Path file : walk.filter(Files::isRegularFile)
+                    .filter(this::isYaml).filter(this::isRealValuesFile).sorted().toList()) {
+                result.addAll(parseClusterSets(yaml.read(file), relativeSource(dir, file)));
             }
         }
         return result.stream().sorted(Comparator.comparing(ClusterSet::sourceName)
@@ -145,14 +146,16 @@ public class AutoShiftRepository {
             return List.of();
         }
         List<Cluster> result = new ArrayList<>();
-        try (var stream = Files.list(dir)) {
-            for (Path file : stream.filter(this::isYaml).filter(this::isRealValuesFile).sorted().toList()) {
+        try (var walk = Files.walk(dir)) {
+            for (Path file : walk.filter(Files::isRegularFile)
+                    .filter(this::isYaml).filter(this::isRealValuesFile).sorted().toList()) {
                 Map<String, Object> clusters = YamlSupport.map(yaml.read(file).get("clusters"));
+                Path source = relativeSource(dir, file);
                 for (var entry : clusters.entrySet()) {
                     Map<String, Object> c = YamlSupport.map(entry.getValue());
                     result.add(new Cluster(entry.getKey(),
                             YamlSupport.string(YamlSupport.map(c.get("config")).get("clusterSet")),
-                            c, labels(c), file));
+                            c, labels(c), source));
                 }
             }
         }
@@ -200,6 +203,11 @@ public class AutoShiftRepository {
             }
         }
         return result.stream().sorted(Comparator.comparing(PolicyDefinition::name)).toList();
+    }
+
+    private Path relativeSource(Path base, Path file) {
+
+        return base.relativize(file);
     }
 
     private List<ClusterSet> parseClusterSets(Map<String, Object> doc, Path file) {

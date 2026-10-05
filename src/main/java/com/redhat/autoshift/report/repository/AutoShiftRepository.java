@@ -130,41 +130,15 @@ public class AutoShiftRepository {
         if (!Files.isDirectory(dir)) {
             return List.of();
         }
+
         List<ClusterSet> result = new ArrayList<>();
-
         try (var walk = Files.walk(dir)) {
-            for (Path file : walk
-                    .filter(Files::isRegularFile)
-                    .filter(this::isYaml)
-                    .filter(this::isRealValuesFile)
-                    .sorted()
-                    .toList()) {
-                Map<String, Object> clusters = YamlSupport.map(yaml.read(file).get("clustersets"));
-
-                // Relative to .../clustersets, NOT .../clustersets/dev
-                Path source = dir.relativize(file);
-                String environment = source.getNameCount() > 1
-                        ? source.getName(0).toString()
-                        : "root";
-                for (var entry : clusters.entrySet()) {
-                    Map<String, Object> c = YamlSupport.map(entry.getValue());
-
-                    result.add(new ClusterSet(
-                            entry.getKey(),
-                            environment,
-                            YamlSupport.string(YamlSupport.map(c.get("config")).get("clusterSet")),
-                            c,
-                            labels(c),
-                            source));
-                }
+            for (Path file : walk.filter(Files::isRegularFile)
+                    .filter(this::isYaml).filter(this::isRealValuesFile).sorted().toList()) {
+                result.addAll(parseClusterSets(yaml.read(file), relativeSource(dir, file)));
             }
         }
-//        try (var walk = Files.walk(dir)) {
-//            for (Path file : walk.filter(Files::isRegularFile)
-//                    .filter(this::isYaml).filter(this::isRealValuesFile).sorted().toList()) {
-//                result.addAll(parseClusterSets(yaml.read(file), relativeSource(dir, file)));
-//            }
-//        }
+
         return result.stream().sorted(Comparator.comparing(ClusterSet::sourceName)
                 .thenComparing(ClusterSet::type).thenComparing(ClusterSet::name)).toList();
     }
@@ -188,39 +162,22 @@ public class AutoShiftRepository {
         }
 
         List<Cluster> result = new ArrayList<>();
-
         try (var walk = Files.walk(dir)) {
-            for (Path file : walk
-                    .filter(Files::isRegularFile)
-                    .filter(this::isYaml)
-                    .filter(this::isRealValuesFile)
-                    .sorted()
-                    .toList()) {
+            for (Path file : walk.filter(Files::isRegularFile)
+                    .filter(this::isYaml).filter(this::isRealValuesFile).sorted().toList()) {
                 Map<String, Object> clusters = YamlSupport.map(yaml.read(file).get("clusters"));
-
-                // Relative to .../clusters, NOT .../clusters/dev
-                Path source = dir.relativize(file);
-                String environment = source.getNameCount() > 1
-                        ? source.getName(0).toString()
-                        : "root";
+                Path source = relativeSource(dir, file);
                 for (var entry : clusters.entrySet()) {
                     Map<String, Object> c = YamlSupport.map(entry.getValue());
-
-                    result.add(new Cluster(
-                            entry.getKey(),
-                            environment,
+                    result.add(new Cluster(entry.getKey(),
                             YamlSupport.string(YamlSupport.map(c.get("config")).get("clusterSet")),
-                            c,
-                            labels(c),
-                            source));
+                            c, labels(c), source));
                 }
             }
         }
 
-        return result.stream()
-                .sorted(Comparator.comparing(Cluster::name)
-                        .thenComparing(Cluster::sourceName))
-                .toList();
+        return result.stream().sorted(Comparator.comparing(Cluster::name)
+                .thenComparing(Cluster::sourceName)).toList();
     }
 
     public Optional<Cluster> findCluster(String sourceName, String name) throws IOException {
@@ -274,33 +231,18 @@ public class AutoShiftRepository {
         return base.relativize(file);
     }
 
-//    private List<ClusterSet> parseClusterSets(Map<String, Object> doc, Path file) {
-//
-//        List<ClusterSet> result = new ArrayList<>();
-//        for (String type : List.of("hubClusterSets", "managedClusterSets")) {
-//            Map<String, Object> sets = YamlSupport.map(doc.get(type));
-//            for (var entry : sets.entrySet()) {
-//                String env = environment(entry.getKey(), file);
-//                LOG.debug("name {} env {}", entry.getKey(), env);
-//                Map<String, Object> set = YamlSupport.map(entry.getValue());
-//                result.add(new ClusterSet(entry.getKey(), type, set, labels(set), file));
-//            }
-//        }
-//        return result;
-//    }
+    private List<ClusterSet> parseClusterSets(Map<String, Object> doc, Path file) {
 
-//    private String environment(String name, Path source) {
-//
-//        String env;
-//        if (source == null || source.getNameCount() < 2) {
-//            env = "root";
-//        } else {
-//            env = source.getName(0).toString();
-//        }
-//        LOG.debug("Name {} Env {}", name, env);
-//
-//        return env;
-//    }
+        List<ClusterSet> result = new ArrayList<>();
+        for (var typeEntry : doc.entrySet()) {
+            Map<String, Object> sets = YamlSupport.map(typeEntry.getValue());
+            for (var entry : sets.entrySet()) {
+                Map<String, Object> set = YamlSupport.map(entry.getValue());
+                result.add(new ClusterSet(entry.getKey(), typeEntry.getKey(), set, labels(set), file));
+            }
+        }
+        return result;
+    }
 
     private Map<String, String> labels(Map<String, Object> object) {
 

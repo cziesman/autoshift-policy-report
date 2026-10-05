@@ -244,8 +244,10 @@ public class PolicyReportService {
         }
 
         List<Cluster> members = report.clusters().stream()
-                .filter(c -> name.equals(c.clusterSet()))
-                .filter(c -> clusterSet.environment().equals(c.environment()))
+                .filter(c -> {
+                    ClusterSet resolved = resolveClusterSet(c, report.clusterSets());
+                    return resolved != null && resolved.id().equals(clusterSet.id());
+                })
                 .toList();
 
         List<PolicyEvaluation> evaluations = resolver.clusterSetPolicies(clusterSet, report.policies());
@@ -269,13 +271,6 @@ public class PolicyReportService {
             return matches.get(0);
         }
         if (matches.size() > 1) {
-            List<ClusterSet> sameEnvironment = matches.stream()
-                    .filter(s -> s.environment().equals(cluster.environment()))
-                    .toList();
-            if (sameEnvironment.size() == 1) {
-                return sameEnvironment.get(0);
-            }
-
             String clusterBase = stripExtension(cluster.sourceName());
             List<ClusterSet> sameProfile = matches.stream()
                     .filter(s -> stripExtension(s.sourceName()).equals(clusterBase))

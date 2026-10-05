@@ -89,7 +89,7 @@ class AutoShiftRepositoryTest {
     @Test
     void preservesDuplicateClusterSetNamesAcrossValuesFiles() throws Exception {
         Path root = Files.createTempDirectory("autoshift-test-");
-        Path dir = root.resolve("autoshift/clustersets/test");
+        Path dir = root.resolve("autoshift/clustersets");
         Files.createDirectories(dir);
         Files.writeString(dir.resolve("profile-a.yaml"), """
                 managedClusterSets:
@@ -117,7 +117,7 @@ class AutoShiftRepositoryTest {
     @Test
     void preservesDuplicateClusterNamesAcrossValuesFiles() throws Exception {
         Path root = Files.createTempDirectory("autoshift-test-");
-        Path dir = root.resolve("autoshift/clusters/test");
+        Path dir = root.resolve("autoshift/clusters");
         Files.createDirectories(dir);
         Files.writeString(dir.resolve("profile-a.yaml"), """
                 clusters:
@@ -190,37 +190,38 @@ class AutoShiftRepositoryTest {
     }
 
     @Test
-    void readsClustersAndClusterSetsFromEnvironmentSubdirectories() throws Exception {
-        Path root = Files.createTempDirectory("autoshift-environments-");
+    void readsClustersAndClusterSetsFromBaseAutoShiftLayout() throws Exception {
+        Path root = Files.createTempDirectory("autoshift-layout-");
         Path values = root.resolve("autoshift");
-        Files.createDirectories(values.resolve("dev/clusters"));
-        Files.createDirectories(values.resolve("qa/clusters"));
-        Files.createDirectories(values.resolve("dev/clustersets"));
-        Files.createDirectories(values.resolve("qa/clustersets"));
+        Files.createDirectories(values.resolve("clusters"));
+        Files.createDirectories(values.resolve("clustersets"));
 
-        Files.writeString(values.resolve("dev/clusters/dev/clusters.yaml"), """
+        Files.writeString(values.resolve("clusters/clusters.yaml"), """
                 clusters:
                   dev-01:
                     config:
                       clusterSet: managed
-                """);
-        Files.writeString(values.resolve("qa/clusters/clusters.yaml"), """
-                clusters:
                   qa-01:
                     config:
-                      clusterSet: managed
+                      clusterSet: sbx
                 """);
-        Files.writeString(values.resolve("dev/clustersets/managed.yaml"), """
+        Files.writeString(values.resolve("clustersets/managed.yaml"), """
                 managedClusterSets:
                   managed:
                     labels:
-                      environment: dev
+                      openshift-gitops: 'true'
                 """);
-        Files.writeString(values.resolve("qa/clustersets/managed.yaml"), """
+        Files.writeString(values.resolve("clustersets/sbx.yaml"), """
                 managedClusterSets:
-                  managed:
+                  sbx:
                     labels:
-                      environment: qa
+                      openshift-gitops: 'false'
+                """);
+        Files.writeString(values.resolve("clustersets/hub.yaml"), """
+                hubClusterSets:
+                  hub:
+                    labels:
+                      openshift-gitops: 'true'
                 """);
 
         AutoShiftProperties p = new AutoShiftProperties();
@@ -230,9 +231,15 @@ class AutoShiftRepositoryTest {
                 new RepositorySourceFactory(p), new YamlSupport());
 
         assertThat(repository.clusters()).extracting(com.redhat.autoshift.report.model.Cluster::sourceName)
-                .containsExactly("dev/clusters.yaml", "qa/clusters.yaml");
+                .containsExactly("clusters.yaml", "clusters.yaml");
+        assertThat(repository.clusters()).extracting(com.redhat.autoshift.report.model.Cluster::clusterSet)
+                .containsExactly("managed", "sbx");
         assertThat(repository.clusterSets()).extracting(com.redhat.autoshift.report.model.ClusterSet::sourceName)
-                .containsExactly("dev/managed.yaml", "qa/managed.yaml");
+                .containsExactly("hub.yaml", "managed.yaml", "sbx.yaml");
+        assertThat(repository.clusterSets()).extracting(com.redhat.autoshift.report.model.ClusterSet::type)
+                .containsExactly("hubClusterSets", "managedClusterSets", "managedClusterSets");
+        assertThat(repository.clusterSets()).extracting(com.redhat.autoshift.report.model.ClusterSet::name)
+                .containsExactly("hub", "managed", "sbx");
     }
 
     @Test

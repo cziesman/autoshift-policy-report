@@ -1,5 +1,9 @@
 package com.redhat.autoshift.report.controller;
 
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import com.redhat.autoshift.report.model.ClusterSet;
 import com.redhat.autoshift.report.service.PolicyReportService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +22,12 @@ public class ClusterController {
     public String clusters(Model model, HttpSession session) throws Exception {
         String policyBranch = DashboardController.selectedPolicyBranch(session);
         String siteValuesBranch = DashboardController.selectedSiteValuesBranch(session);
-        model.addAttribute("report", service.report(policyBranch, siteValuesBranch));
+        var report = service.report(policyBranch, siteValuesBranch);
+        Map<String, ClusterSet> clusterSetsByClusterId = report.clusterReports().stream()
+                .filter(r -> r.clusterSet() != null)
+                .collect(Collectors.toMap(r -> r.cluster().id(), r -> r.clusterSet(), (a, b) -> a));
+        model.addAttribute("report", report);
+        model.addAttribute("clusterSetsByClusterId", clusterSetsByClusterId);
         model.addAttribute("currentPage", "clusters");
         model.addAttribute("selectedPolicyBranch", policyBranch);
         model.addAttribute("selectedSiteValuesBranch", siteValuesBranch);

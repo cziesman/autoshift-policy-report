@@ -4,8 +4,12 @@
 <div th:replace="~{layout :: nav}"></div>
 <main class="app-content">
 <header class="page-header"><h1 th:text="${report.cluster.name}">cluster</h1>
-  <div class="meta"><span>Environment: <strong th:text="${report.cluster.environment}">dev</strong></span>
-    <span>ClusterSet: <strong th:text="${report.cluster.clusterSet ?: 'unassigned'}">managed</strong></span>
+  <div class="meta"><span>ClusterSet:
+    <strong th:if="${report.clusterSet == null}" th:text="${report.cluster.clusterSet ?: 'unassigned'}">managed</strong>
+    <a th:if="${report.clusterSet != null}"
+       th:href="@{/clustersets/{type}/{source}/{name}(type=${report.clusterSet.type},source=${report.clusterSet.sourceName},name=${report.clusterSet.name})}"
+       th:text="${report.clusterSet.name}">managed</a>
+  </span>
     <span>Source: <strong th:text="${report.cluster.sourceName}">cluster.yaml</strong></span></div>
 </header>
 <rh-alert th:if="${report.clusterSet == null}" state="warning">

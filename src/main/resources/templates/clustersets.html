@@ -7,15 +7,14 @@
   <rh-card>
     <h2 slot="header" class="card-title">All ClusterSets</h2>
     <div class="table-wrap"><table class="data-table">
-      <thead><tr><th>ClusterSet</th><th>Environment</th><th>Type</th><th>Clusters</th><th>Source</th></tr></thead>
+      <thead><tr><th>ClusterSet</th><th>Type</th><th>Clusters</th><th>Source</th></tr></thead>
       <tbody><tr th:each="cs : ${report.clusterSets}">
         <td><a th:href="@{/clustersets/{type}/{source}/{name}(type=${cs.type},source=${cs.sourceName},name=${cs.name})}" th:text="${cs.name}">managed</a></td>
-        <td><rh-tag variant="desaturated" th:text="${cs.environment}">unk</rh-tag></td>
         <td><rh-tag variant="desaturated" th:text="${cs.type}">managedClusterSets</rh-tag></td>
         <td th:text="${clusterCounts[cs.id]}">0</td>
-        <td class="muted" th:text="${cs.sourceName}">dev/managed.yaml</td>
+        <td class="muted" th:text="${cs.sourceName}">managed.yaml</td>
       </tr>
-      <tr th:if="${#lists.isEmpty(report.clusterSets)}"><td colspan="5" class="empty">No ClusterSets found.</td></tr>
+      <tr th:if="${#lists.isEmpty(report.clusterSets)}"><td colspan="4" class="empty">No ClusterSets found.</td></tr>
       </tbody>
     </table></div>
   </rh-card>

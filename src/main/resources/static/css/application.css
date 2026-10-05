@@ -525,15 +525,6 @@ rh-card { display:block; }
 }
 
 @media (max-width: 700px) {
-  .table-toolbar {
-    justify-content:stretch;
-  }
-  .table-filter {
-    width:100%;
-  }
-  .table-filter input {
-    width:100%;
-  }
   .matrix-title-row {
     width:100%;
     align-items:flex-start;

@@ -6,17 +6,23 @@
         <main class="app-content">
             <header class="page-header"><h1>Policies</h1>
                 <p>Policy catalog discovered directly from the AutoShift policy repository.</p></header>
-            <rh-card>
+            <rh-card class="table-card">
                 <h2 slot="header" class="card-title">Policy Catalog</h2>
+                <div class="table-toolbar">
+                    <label class="table-filter">
+                        <span>Filter</span>
+                        <input type="search" placeholder="Filter policies" aria-label="Filter policies">
+                    </label>
+                </div>
                 <div class="table-wrap">
-                    <table class="data-table">
+                    <table class="data-table" data-enhanced-table="true">
                         <thead>
                         <tr>
-                            <th>Policy</th>
-                            <th>Tier</th>
-                            <th>Placement rules</th>
-                            <th>Enabled</th>
-                            <th>Clusters</th>
+                            <th data-sortable="true">Policy</th>
+                            <th data-sortable="true">Tier</th>
+                            <th data-sortable="true">Placement rules</th>
+                            <th data-sortable="true">Enabled</th>
+                            <th data-sortable="true">Clusters</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -29,6 +35,7 @@
                             <td th:text="${p.enabled}"></td>
                             <td th:text="${p.total}"></td>
                         </tr>
+                        <tr th:if="${#lists.isEmpty(report.policySummaries)}"><td colspan="5" class="empty">No policies found.</td></tr>
                         </tbody>
                     </table>
                 </div>

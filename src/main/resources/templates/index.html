@@ -30,9 +30,15 @@
     <div th:replace="~{repository-info :: repositoryCard('Site Values Repository', ${siteValuesRepository}, ${availableSiteValuesBranches}, 'siteValuesBranch')}"></div>
   </div>
 
-  <rh-card class="matrix-card">
+  <rh-card class="table-card matrix-card">
     <div class="matrix-header" slot="header">
-      <h2>Policy Implementation Matrix</h2>
+      <div class="matrix-title-row">
+        <h2>Policy Implementation Matrix</h2>
+        <label class="table-filter matrix-filter">
+          <span>Filter</span>
+          <input type="search" placeholder="Filter policies" aria-label="Filter policy implementation matrix">
+        </label>
+      </div>
       <div class="legend" aria-label="Policy status legend">
         <span class="legend-item"><span class="legend-icon enabled">✓</span>Implemented</span>
         <span class="legend-item"><span class="legend-icon excluded">−</span>Excluded</span>
@@ -41,20 +47,20 @@
       </div>
     </div>
     <div class="table-wrap">
-      <table class="data-table matrix">
+      <table class="data-table matrix" data-enhanced-table="true" data-filter-columns="0,1">
         <thead>
           <tr>
-            <th rowspan="2" class="policy-name">Policy</th>
-            <th rowspan="2">Tier</th>
+            <th rowspan="2" class="policy-name" data-sortable="true">Policy</th>
+            <th rowspan="2" data-sortable="true">Tier</th>
             <th th:attr="colspan=${report.clusterSets.size()}" class="group-heading">ClusterSets</th>
             <th th:attr="colspan=${report.clusters.size()}" class="group-heading">Clusters</th>
           </tr>
           <tr>
-            <th th:each="clusterSet : ${report.clusterSets}">
+            <th th:each="clusterSet : ${report.clusterSets}" data-sortable="true">
               <a th:href="@{/clustersets/{type}/{source}/{name}(type=${clusterSet.type},source=${clusterSet.sourceName},name=${clusterSet.name})}"
                  th:text="${clusterSet.name}">managed</a>
             </th>
-            <th th:each="cluster : ${report.clusters}">
+            <th th:each="cluster : ${report.clusters}" data-sortable="true">
               <a th:href="@{/clusters/{source}/{name}(source=${cluster.sourceName},name=${cluster.name})}" th:text="${cluster.name}">cluster</a>
             </th>
           </tr>

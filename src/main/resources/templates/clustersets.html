@@ -4,10 +4,21 @@
 <div th:replace="~{layout :: nav}"></div>
 <main class="app-content">
   <header class="page-header"><h1>ClusterSets</h1><p>ClusterSets discovered from the site values repository.</p></header>
-  <rh-card>
+  <rh-card class="table-card">
     <h2 slot="header" class="card-title">All ClusterSets</h2>
-    <div class="table-wrap"><table class="data-table">
-      <thead><tr><th>ClusterSet</th><th>Type</th><th>Clusters</th><th>Source</th></tr></thead>
+    <div class="table-toolbar">
+      <label class="table-filter">
+        <span>Filter</span>
+        <input type="search" placeholder="Filter ClusterSets" aria-label="Filter ClusterSets">
+      </label>
+    </div>
+    <div class="table-wrap"><table class="data-table" data-enhanced-table="true">
+      <thead><tr>
+        <th data-sortable="true">ClusterSet</th>
+        <th data-sortable="true">Type</th>
+        <th data-sortable="true">Clusters</th>
+        <th data-sortable="true">Source</th>
+      </tr></thead>
       <tbody><tr th:each="cs : ${report.clusterSets}">
         <td><a th:href="@{/clustersets/{type}/{source}/{name}(type=${cs.type},source=${cs.sourceName},name=${cs.name})}" th:text="${cs.name}">managed</a></td>
         <td><rh-tag variant="desaturated" th:text="${cs.type}">managedClusterSets</rh-tag></td>

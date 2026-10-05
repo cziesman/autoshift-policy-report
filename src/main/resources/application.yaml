@@ -49,6 +49,10 @@ autoshift:
     # Set to 0 to disable caching.
     cache-seconds: 1800
 
+    # JGit TLS certificate/hostname verification. Keep true unless a Git server
+    # uses a certificate that cannot be verified by the JVM trust store.
+    git-ssl-verify: ${AUTOSHIFT_REPORT_GIT_SSL_VERIFY:true}
+
 logging:
   level:
     root: INFO

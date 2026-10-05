@@ -13,6 +13,9 @@ public class AutoShiftProperties {
 
     private long cacheSeconds = 60;
 
+    /** Whether JGit should verify TLS certificates for HTTP(S) repositories. */
+    private boolean gitSslVerify = true;
+
     public RepositoryProperties getPolicies() {
 
         return policies;
@@ -41,6 +44,16 @@ public class AutoShiftProperties {
     public void setRefreshOnRequest(boolean refreshOnRequest) {
 
         this.refreshOnRequest = refreshOnRequest;
+    }
+
+    public boolean isGitSslVerify() {
+
+        return gitSslVerify;
+    }
+
+    public void setGitSslVerify(boolean gitSslVerify) {
+
+        this.gitSslVerify = gitSslVerify;
     }
 
     public long getCacheSeconds() {

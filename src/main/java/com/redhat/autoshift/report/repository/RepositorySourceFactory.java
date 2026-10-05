@@ -72,6 +72,7 @@ public class RepositorySourceFactory {
                     .setTags(false)
                     .setRemote(location);
             credentialsProvider(config.getToken(), location).ifPresent(command::setCredentialsProvider);
+            command.setTransportConfigCallback(gitTransportConfigCallback());
 
             Set<String> result = new TreeSet<>();
             for (Ref ref : command.call()) {
@@ -150,6 +151,13 @@ public class RepositorySourceFactory {
         return lower.startsWith("http://") || lower.startsWith("https://")
                 || lower.startsWith("ssh://") || lower.startsWith("git://")
                 || lower.startsWith("git@");
+    }
+
+    private org.eclipse.jgit.api.TransportConfigCallback gitTransportConfigCallback() {
+        if (properties.isGitSslVerify()) {
+            return null;
+        }
+        return new GitTransportConfigCallback();
     }
 
     private java.util.Optional<CredentialsProvider> credentialsProvider(String token, String uri) {
@@ -253,6 +261,7 @@ public class RepositorySourceFactory {
                             .setDirectory(checkout.toFile())
                             .setBranch(branch);
                     credentialsProvider(token, uri).ifPresent(command::setCredentialsProvider);
+                    command.setTransportConfigCallback(gitTransportConfigCallback());
                     git = command.call();
                     root = repositoryPath.isBlank() ? checkout : checkout.resolve(repositoryPath).normalize();
                     if (!Files.isDirectory(root)) {
@@ -262,10 +271,12 @@ public class RepositorySourceFactory {
                 } else if (refresh) {
                     var fetch = git.fetch().setRemote("origin");
                     credentialsProvider(token, uri).ifPresent(fetch::setCredentialsProvider);
+                    fetch.setTransportConfigCallback(gitTransportConfigCallback());
                     fetch.call();
                     checkoutBranch(git, branch);
                     var pull = git.pull();
                     credentialsProvider(token, uri).ifPresent(pull::setCredentialsProvider);
+                    pull.setTransportConfigCallback(gitTransportConfigCallback());
                     pull.call();
                 }
                 return root;

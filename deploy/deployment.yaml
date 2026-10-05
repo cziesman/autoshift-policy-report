@@ -26,6 +26,11 @@ spec:
             - name: AUTOSHIFT_REPORT_SITE_VALUES_PATH
               value: "autoshift"
 
+            # Set to false only when the Git server uses a certificate that cannot be verified.
+            # This affects only JGit HTTP(S) connections made by this application.
+            - name: AUTOSHIFT_REPORT_GIT_SSL_VERIFY
+              value: "false"
+
             # Optional repository authentication. The Secret is intentionally not included here.
             - name: AUTOSHIFT_REPORT_POLICIES_TOKEN
               valueFrom:

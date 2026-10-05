@@ -38,7 +38,7 @@ autoshift:
       branch: main
       # Optional path within the repository containing the site values.
       # Leave empty to use the built-in autoshift, values, or repository-root discovery.
-      path: autoshift
+      path: autoshift/values
       # Optional token for private HTTP(S) repositories. If empty, local Git credentials are used when available; otherwise access is anonymous.
       token: ${AUTOSHIFT_REPORT_SITE_VALUES_TOKEN:}
 
@@ -58,5 +58,5 @@ logging:
     org.springframework.web: DEBUG
     org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping: TRACE
 
-    org.thymeleaf: DEBUG
+    org.thymeleaf: INFO
     org.springframework.web.servlet.view: DEBUG

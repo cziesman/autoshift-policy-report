@@ -89,17 +89,17 @@ class AutoShiftRepositoryTest {
     @Test
     void preservesDuplicateClusterSetNamesAcrossValuesFiles() throws Exception {
         Path root = Files.createTempDirectory("autoshift-test-");
-        Path dir = root.resolve("autoshift/clustersets");
+        Path dir = root.resolve("autoshift/clustersets/test");
         Files.createDirectories(dir);
         Files.writeString(dir.resolve("profile-a.yaml"), """
                 managedClusterSets:
-                  hub:
+                  hub1:
                     labels:
                       profile: 'a'
                 """);
         Files.writeString(dir.resolve("profile-b.yaml"), """
                 managedClusterSets:
-                  hub:
+                  hub2:
                     labels:
                       profile: 'b'
                 """);
@@ -107,16 +107,17 @@ class AutoShiftRepositoryTest {
         AutoShiftProperties properties = new AutoShiftProperties();
         properties.getPolicies().setLocation(root.toString());
         properties.getSiteValues().setLocation(root.toString());
+        properties.getSiteValues().setPath("autoshift");
         AutoShiftRepository repository = new AutoShiftRepository(new RepositorySourceFactory(properties), new YamlSupport());
 
         assertThat(repository.clusterSets()).extracting(com.redhat.autoshift.report.model.ClusterSet::id)
-                .containsExactly("profile-a.yaml:managedClusterSets/hub", "profile-b.yaml:managedClusterSets/hub");
+                .containsExactly("profile-a.yaml:managedClusterSets/hub1", "profile-b.yaml:managedClusterSets/hub2");
     }
 
     @Test
     void preservesDuplicateClusterNamesAcrossValuesFiles() throws Exception {
         Path root = Files.createTempDirectory("autoshift-test-");
-        Path dir = root.resolve("autoshift/clusters");
+        Path dir = root.resolve("autoshift/clusters/test");
         Files.createDirectories(dir);
         Files.writeString(dir.resolve("profile-a.yaml"), """
                 clusters:
@@ -192,30 +193,30 @@ class AutoShiftRepositoryTest {
     void readsClustersAndClusterSetsFromEnvironmentSubdirectories() throws Exception {
         Path root = Files.createTempDirectory("autoshift-environments-");
         Path values = root.resolve("autoshift");
-        Files.createDirectories(values.resolve("clusters/dev"));
-        Files.createDirectories(values.resolve("clusters/qa"));
-        Files.createDirectories(values.resolve("clustersets/dev"));
-        Files.createDirectories(values.resolve("clustersets/qa"));
+        Files.createDirectories(values.resolve("dev/clusters"));
+        Files.createDirectories(values.resolve("qa/clusters"));
+        Files.createDirectories(values.resolve("dev/clustersets"));
+        Files.createDirectories(values.resolve("qa/clustersets"));
 
-        Files.writeString(values.resolve("clusters/dev/clusters.yaml"), """
+        Files.writeString(values.resolve("dev/clusters/dev/clusters.yaml"), """
                 clusters:
                   dev-01:
                     config:
                       clusterSet: managed
                 """);
-        Files.writeString(values.resolve("clusters/qa/clusters.yaml"), """
+        Files.writeString(values.resolve("qa/clusters/clusters.yaml"), """
                 clusters:
                   qa-01:
                     config:
                       clusterSet: managed
                 """);
-        Files.writeString(values.resolve("clustersets/dev/managed.yaml"), """
+        Files.writeString(values.resolve("dev/clustersets/managed.yaml"), """
                 managedClusterSets:
                   managed:
                     labels:
                       environment: dev
                 """);
-        Files.writeString(values.resolve("clustersets/qa/managed.yaml"), """
+        Files.writeString(values.resolve("qa/clustersets/managed.yaml"), """
                 managedClusterSets:
                   managed:
                     labels:

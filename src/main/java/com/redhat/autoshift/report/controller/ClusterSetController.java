@@ -5,6 +5,8 @@ import java.util.Map;
 
 import com.redhat.autoshift.report.service.PolicyReportService;
 import jakarta.servlet.http.HttpSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -13,6 +15,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 @Controller
 public class ClusterSetController {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ClusterSetController.class);
 
     @Autowired
     private PolicyReportService service;
@@ -26,6 +30,7 @@ public class ClusterSetController {
         Map<String, Long> clusterCounts = new LinkedHashMap<>();
         for (var cs : report.clusterSets()) {
             long count = report.clusters().stream()
+                    .peek(c -> LOG.debug("cs: {}  c: {}", cs.environment(), c.environment()))
                     .filter(c -> cs.name().equals(c.clusterSet()))
                     .filter(c -> cs.environment().equals(c.environment()))
                     .count();

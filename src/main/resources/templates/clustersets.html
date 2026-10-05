@@ -10,7 +10,7 @@
       <thead><tr><th>ClusterSet</th><th>Environment</th><th>Type</th><th>Clusters</th><th>Source</th></tr></thead>
       <tbody><tr th:each="cs : ${report.clusterSets}">
         <td><a th:href="@{/clustersets/{type}/{source}/{name}(type=${cs.type},source=${cs.sourceName},name=${cs.name})}" th:text="${cs.name}">managed</a></td>
-        <td><rh-tag variant="desaturated" th:text="${cs.environment}">dev</rh-tag></td>
+        <td><rh-tag variant="desaturated" th:text="${cs.environment}">unk</rh-tag></td>
         <td><rh-tag variant="desaturated" th:text="${cs.type}">managedClusterSets</rh-tag></td>
         <td th:text="${clusterCounts[cs.id]}">0</td>
         <td class="muted" th:text="${cs.sourceName}">dev/managed.yaml</td>

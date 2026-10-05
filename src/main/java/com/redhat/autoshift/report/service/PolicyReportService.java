@@ -245,6 +245,7 @@ public class PolicyReportService {
 
         List<Cluster> members = report.clusters().stream()
                 .filter(c -> name.equals(c.clusterSet()))
+                .filter(c -> clusterSet.environment().equals(c.environment()))
                 .toList();
 
         List<PolicyEvaluation> evaluations = resolver.clusterSetPolicies(clusterSet, report.policies());
